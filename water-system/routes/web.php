@@ -1,0 +1,77 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\SaleController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth','admin'])->group(function () {
+    Route::get('/admin-test', function () {
+        return "Admin Access Granted";
+    });
+
+    Route::get('/products',
+        [ProductController::class, 'index'])
+        ->name('products.index');
+
+    Route::get('/products/create',
+        [ProductController::class, 'create'])
+        ->name('products.create');
+
+    Route::post('/products',
+        [ProductController::class, 'store'])
+        ->name('products.store');
+
+    Route::get('/products/{product}/edit',
+        [ProductController::class, 'edit'])
+        ->name('products.edit');
+
+    Route::put('/products/{product}',
+        [ProductController::class, 'update'])
+        ->name('products.update');
+
+    Route::delete('/products/{product}',
+        [ProductController::class, 'destroy'])
+        ->name('products.destroy');
+
+    Route::get('/stocks',
+        [StockController::class, 'index'])
+        ->name('stocks.index');
+
+    Route::get('/stocks/create',
+        [StockController::class, 'create'])
+        ->name('stocks.create');
+
+    Route::post('/stocks',
+        [StockController::class, 'store'])
+        ->name('stocks.store');
+
+    Route::get('/sales',
+        [SaleController::class, 'index'])
+        ->name('sales.index');
+
+    Route::get('/sales/create',
+        [SaleController::class, 'create'])
+        ->name('sales.create');
+
+    Route::post('/sales',
+        [SaleController::class, 'store'])
+        ->name('sales.store');
+});
+
+require __DIR__.'/auth.php';
