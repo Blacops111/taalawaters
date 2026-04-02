@@ -44,7 +44,7 @@
 
         <tbody>
 
-            @foreach($sales as $sale)
+            @forelse($sales as $sale)
 
             <tr>
 
@@ -72,7 +72,16 @@
 
             </tr>
 
-            @endforeach
+            @empty
+
+            <tr>
+                <td colspan="6"
+                    class="text-center">
+                    No sales recorded yet.
+                </td>
+            </tr>
+
+            @endforelse
 
         </tbody>
 

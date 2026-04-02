@@ -1,153 +1,106 @@
-<!DOCTYPE html> 
-<html lang="en">
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
-    <meta charset="UTF-8">
-    <title>Taala Crystal Water System</title>
-    <link rel="icon"
-          type="image/png"
-          href="{{ asset('images/logo.png') }}">
 
-    <!-- Bootstrap CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="utf-8">
 
-    <style>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
 
-        body {
-            background-color: #f5f9ff;
-        }
+    <title>Taala Water System</title>
 
-        /* Sidebar */
-        .sidebar {
-            height: 100vh;
-            background: linear-gradient(to bottom, #1E73BE, #4DA6FF);
-            color: white;
-            padding-top: 20px;
-        }
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          rel="stylesheet">
 
-        .sidebar a {
-            color: white;
-            display: block;
-            padding: 12px;
-            text-decoration: none;
-        }
+    <!-- Fonts -->
+    <link rel="preconnect"
+          href="https://fonts.bunny.net">
 
-        .sidebar a:hover {
-            background-color: #0d47a1;
-        }
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap"
+          rel="stylesheet" />
 
-        /* Header */
-        .header {
-            background-color: white;
-            padding: 10px;
-            border-bottom: 2px solid #1E73BE;
-        }
-
-        .footer {
-            background-color: white;
-            padding: 10px;
-            border-top: 2px solid #1E73BE;
-            text-align: center;
-        }
-
-    </style>
+    <!-- Scripts -->
+    @vite(['resources/css/app.css',
+            'resources/js/app.js'])
 
 </head>
 
-<body>
+<body class="font-sans antialiased">
 
-<div class="container-fluid">
-<div class="row">
+<div class="min-h-screen bg-gray-100">
 
-    <!-- Sidebar -->
-    <div class="col-md-2 sidebar">
+    <!-- Top Navigation -->
 
-        <div class="text-center mb-3">
+    <nav class="bg-white border-b border-gray-100">
 
-            <img src="{{ asset('images/logo.png') }}"
-                 width="60"
-                 height="60"
-                 alt="Taala Logo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <h5 class="mt-2">
-                Taala Crystal
-            </h5>
+            <div class="flex justify-between h-16">
 
-        </div>
+                <!-- Logo / Title -->
 
-        <a href="#">Dashboard</a>
-        <a href="#">Products</a>
-        <a href="#">Stock</a>
-        <a href="#">Sales</a>
-        <a href="#">Customers</a>
-        <a href="#">Trucks</a>
-        <a href="#">Expenses</a>
-        <a href="#">Reports</a>
+                <div class="flex items-center space-x-6">
 
-    </div>
+                    <span class="text-lg font-bold">
 
-    <!-- Main Content -->
-    <div class="col-md-10">
+                        Taala Water System
 
-        <!-- Header -->
-        <div class="header">
+                    </span>
 
-            <div class="d-flex justify-content-between">
+                    <!-- Menu Links -->
 
-                <h5>
-                    Water Management System
-                </h5>
+                    <a href="{{ route('dashboard') }}"
+                       class="text-gray-700 hover:text-blue-500">
 
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="btn btn-danger btn-sm">
-                        Logout
-                    </button>
-                </form>
+                        Dashboard
+
+                    </a>
+
+                    <a href="{{ route('products.index') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        Products
+
+                    </a>
+
+                    <a href="{{ route('stocks.index') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        Stocks
+
+                    </a>
+
+                    <a href="{{ route('sales.index') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        Sales
+
+                    </a>
+
+                </div>
 
             </div>
 
         </div>
 
-        <nav class="navbar navbar-expand-lg navbar-light bg-light px-3">
+    </nav>
 
-            <ul class="navbar-nav me-auto">
+    <!-- Page Content -->
 
-                <li class="nav-item">
-                    <a class="nav-link"
-                       href="{{ route('products.index') }}">
-                        Products
-                    </a>
-                </li>
+    <main class="p-6">
 
-                <li class="nav-item">
-                    <a class="nav-link"
-                       href="{{ route('stocks.index') }}">
-                        Stocks
-                    </a>
-                </li>
+        @yield('content')
 
-            </ul>
-
-        </nav>
-
-        <!-- Page Content -->
-        <div class="p-4">
-
-            @yield('content')
-
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-
-            Naturally Pure, Perfectly Refreshing 💧
-
-        </div>
-
-    </div>
+    </main>
 
 </div>
-</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
+
 </html>
