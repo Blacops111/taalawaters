@@ -2,99 +2,91 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Sale;
-use App\Models\Product;
-use App\Models\Stock;
 use App\Exports\SalesExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Stock;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SaleController extends Controller
 {
-
-    // Show sales list
     public function index()
     {
         $sales = Sale::with('product')->get();
 
-        return view('sales.index',
-            compact('sales'));
+        return view('sales.index', compact('sales'));
     }
 
-
-    // Show create sale form
     public function create()
     {
         $products = Product::all();
 
-        return view('sales.create',
-            compact('products'));
+        return view('sales.create', compact('products'));
     }
 
-
-    // Store sale & reduce stock
     public function store(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required',
-            'quantity_sold' => 'required|numeric',
-            'price' => 'required|numeric',
-            'sale_date' => 'required|date'
+        $validated = $request->validate([
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'quantity_sold' => ['required', 'integer', 'min:1'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'sale_date' => ['required', 'date'],
         ]);
 
-        // Get stock record
-        $stock = Stock::where('product_id',
-                    $request->product_id)
-                    ->latest()
-                    ->first();
+        $saleRecorded = DB::transaction(function () use ($validated) {
+            $stocks = Stock::where('product_id', $validated['product_id'])
+                ->where('quantity_remaining', '>', 0)
+                ->orderBy('date_added')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
-        if (!$stock ||
-            $stock->quantity_remaining <
-            $request->quantity_sold) {
+            $availableStock = $stocks->sum('quantity_remaining');
 
-            return back()->with(
-                'error',
-                'Not enough stock available'
-            );
+            if ($availableStock < $validated['quantity_sold']) {
+                return false;
+            }
+
+            $total = $validated['quantity_sold'] * $validated['price'];
+
+            Sale::create([
+                'product_id' => $validated['product_id'],
+                'quantity_sold' => $validated['quantity_sold'],
+                'price' => $validated['price'],
+                'total_amount' => $total,
+                'sale_date' => $validated['sale_date'],
+            ]);
+
+            $quantityToDeduct = $validated['quantity_sold'];
+
+            foreach ($stocks as $stock) {
+                if ($quantityToDeduct <= 0) {
+                    break;
+                }
+
+                $deduction = min($stock->quantity_remaining, $quantityToDeduct);
+
+                $stock->quantity_remaining -= $deduction;
+                $stock->save();
+
+                $quantityToDeduct -= $deduction;
+            }
+
+            return true;
+        }, 3);
+
+        if (!$saleRecorded) {
+            return back()
+                ->withInput()
+                ->with('error', 'Not enough stock available');
         }
-
-        // Calculate total
-        $total =
-            $request->quantity_sold *
-            $request->price;
-
-        // Create sale
-        Sale::create([
-
-            'product_id' =>
-                $request->product_id,
-
-            'quantity_sold' =>
-                $request->quantity_sold,
-
-            'price' =>
-                $request->price,
-
-            'total_amount' =>
-                $total,
-
-            'sale_date' =>
-                $request->sale_date
-
-        ]);
-
-        // Reduce stock
-        $stock->quantity_remaining -=
-            $request->quantity_sold;
-
-        $stock->save();
 
         return redirect()
             ->route('sales.index')
-            ->with('success',
-            'Sale recorded successfully');
+            ->with('success', 'Sale recorded successfully');
     }
 
     public function exportSales()
@@ -128,5 +120,4 @@ class SaleController extends Controller
             storage_path('app/public/' . $fileName)
         );
     }
-
 }
