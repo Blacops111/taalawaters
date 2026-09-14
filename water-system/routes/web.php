@@ -30,6 +30,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
 
+    Route::get('/inventory/receipts/create', [InventoryController::class, 'createReceipt'])
+        ->name('inventory.receipts.create');
+
+    Route::post('/inventory/receipts', [InventoryController::class, 'storeReceipt'])
+        ->name('inventory.receipts.store');
+
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');
 
