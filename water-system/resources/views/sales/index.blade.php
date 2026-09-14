@@ -6,6 +6,15 @@
 
     <h2>Sales List</h2>
 
+    <a href="{{ route('sales.export.excel') }}"
+       class="btn btn-success mb-3 ms-2">
+        Export Sales to Excel
+    </a>
+    <a href="{{ route('sales.pdf') }}"
+       class="btn btn-danger mb-3 ms-2">
+        Export Sales PDF
+    </a>
+
     {{-- Success Message --}}
     @if(session('success'))
         <div class="alert alert-success">

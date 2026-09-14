@@ -34,6 +34,14 @@
                    required>
         </div>
 
+        <div class="mb-3">
+            <label>Cost Price</label>
+            <input type="number" step="0.01"
+                   name="cost_price"
+                   class="form-control"
+                   required>
+        </div>
+
         <button type="submit" class="btn btn-primary">
             Save Product
         </button>

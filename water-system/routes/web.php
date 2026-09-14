@@ -5,6 +5,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TruckController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -73,6 +74,20 @@ Route::middleware(['auth','admin'])->group(function () {
     Route::post('/sales',
         [SaleController::class, 'store'])
         ->name('sales.store');
+
+    Route::get('/sales/export',
+        [SaleController::class, 'export'])
+        ->name('sales.export');
+
+    Route::get('/sales/pdf',
+        [SaleController::class, 'exportPdf'])
+        ->name('sales.pdf');
+
+    Route::get('/sales/export-excel',
+        [SaleController::class, 'exportExcel'])
+        ->name('sales.export.excel');
+
+    Route::resource('trucks', TruckController::class);
 });
 
 require __DIR__.'/auth.php';

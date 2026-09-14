@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Models\Sale;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -22,6 +23,46 @@ class DashboardController extends Controller
 
         $totalRevenue =
             Sale::sum('total_amount');
+
+        // Total Profit
+
+        $totalProfit = Sale::with('product')->get()
+            ->sum(function ($sale) {
+
+                $profitPerUnit =
+                    $sale->product->price -
+                    $sale->product->cost_price;
+
+                return $profitPerUnit *
+                       $sale->quantity_sold;
+            });
+
+        // Monthly Profit Chart
+
+        $monthlyProfit = Sale::with('product')
+            ->get()
+            ->groupBy(function ($sale) {
+                return Carbon::parse($sale->created_at)
+                    ->format('M');
+            })
+            ->map(function ($sales) {
+
+                return $sales->sum(function ($sale) {
+
+                    $profitPerUnit =
+                        $sale->product->price -
+                        $sale->product->cost_price;
+
+                    return $profitPerUnit *
+                           $sale->quantity_sold;
+                });
+
+            });
+
+        // Prepare labels & values
+
+        $profitLabels = $monthlyProfit->keys();
+        $profitData = $monthlyProfit->values();
 
 
         // Graph Data (Sales per Day)
@@ -76,6 +117,22 @@ class DashboardController extends Controller
             }
         }
 
+        $monthlyProfits = Sale::select(
+                DB::raw('MONTH(created_at) as month'),
+                DB::raw('SUM(total_amount) as total_profit')
+            )
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        $months = [];
+        $profits = [];
+
+        foreach ($monthlyProfits as $data) {
+            $months[] = date("F", mktime(0, 0, 0, $data->month, 1));
+            $profits[] = $data->total_profit;
+        }
+
         // Low Stock Alert (Correct Logic)
         $lowStockProducts = Stock::with('product')
             ->where('quantity_remaining', '<', 10)
@@ -88,6 +145,9 @@ class DashboardController extends Controller
                 'totalStock',
                 'totalSales',
                 'totalRevenue',
+                'totalProfit',
+                'profitLabels',
+                'profitData',
                 'dates',
                 'totals',
                 'productNames',
@@ -95,7 +155,10 @@ class DashboardController extends Controller
                 'stockLabels',
                 'stockData',
                 'stockColors',
-                'lowStockProducts'
+                'lowStockProducts',
+                'monthlyProfits',
+                'months',
+                'profits'
             ));
     }
 }

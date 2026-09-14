@@ -86,6 +86,22 @@
 
         </div>
 
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Total Profit
+                    </h5>
+
+                    <h3>
+                        KES {{ number_format($totalProfit, 2) }}
+                    </h3>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -154,6 +170,45 @@
 
                     <canvas id="stockBarChart"></canvas>
 
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row mt-4">
+
+    <div class="col-md-6">
+
+        <div class="card">
+
+            <div class="card-header">
+            📈 Monthly Profit Trend
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="profitChart"
+                        height="120"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <div class="card">
+
+            <div class="card-body">
+
+                <div style="width:100%; max-width:700px;">
+                    <canvas id="monthlyProfitChart"></canvas>
                 </div>
 
             </div>
@@ -345,10 +400,9 @@ new Chart(barCtx, {
 
             label: 'Stock Quantity',
 
-            data:
-            {!! json_encode($stockData ?? []) !!},
-            backgroundColor:
-            {!! json_encode($stockColors ?? []) !!}
+            data: @json($stockData),
+            backgroundColor: @json($stockColors),
+            borderWidth: 1
 
         }]
 
@@ -364,6 +418,96 @@ new Chart(barCtx, {
 });
 
 }
+
+});
+
+</script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+// Monthly Profit Chart
+
+var ctxProfit =
+document.getElementById('profitChart')
+.getContext('2d');
+
+new Chart(ctxProfit, {
+
+type: 'line',
+
+data: {
+
+labels: @json($profitLabels),
+
+datasets: [{
+
+label: 'Monthly Profit (KES)',
+
+data: @json($profitData),
+
+borderWidth: 2,
+
+tension: 0.3
+
+}]
+
+},
+
+options: {
+
+responsive: true,
+
+plugins: {
+
+legend: {
+
+display: true
+
+}
+
+}
+
+}
+
+});
+
+});
+
+</script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+var ctx = document.getElementById('monthlyProfitChart').getContext('2d');
+
+var monthlyProfitChart = new Chart(ctx, {
+
+    type: 'bar',
+
+    data: {
+
+        labels: @json($months),
+
+        datasets: [{
+            label: 'Monthly Profit',
+
+            data: @json($profits),
+
+            backgroundColor: [
+                '#4CAF50',
+                '#2196F3',
+                '#FFC107',
+                '#9C27B0',
+                '#FF5722'
+            ]
+
+        }]
+    }
+
+});
 
 });
 

@@ -42,6 +42,15 @@
                    required>
         </div>
 
+        <div class="mb-3">
+            <label>Cost Price</label>
+
+            <input type="number"
+                   name="cost_price"
+                   value="{{ $product->cost_price }}"
+                   class="form-control">
+        </div>
+
         <button type="submit"
                 class="btn btn-primary">
             Update Product

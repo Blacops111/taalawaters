@@ -6,6 +6,10 @@ use Illuminate\Http\Request;
 use App\Models\Sale;
 use App\Models\Product;
 use App\Models\Stock;
+use App\Exports\SalesExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class SaleController extends Controller
 {
@@ -91,6 +95,38 @@ class SaleController extends Controller
             ->route('sales.index')
             ->with('success',
             'Sale recorded successfully');
+    }
+
+    public function exportSales()
+    {
+        return Excel::download(new SalesExport, 'sales.xlsx');
+    }
+
+    public function export()
+    {
+        return Excel::download(
+            new SalesExport,
+            'sales_report.xlsx'
+        );
+    }
+
+    public function exportPdf()
+    {
+        $sales = Sale::with('product')->get();
+
+        $pdf = Pdf::loadView('sales.pdf', compact('sales'));
+
+        return $pdf->download('sales_report.pdf');
+    }
+
+    public function exportExcel()
+    {
+        $export = new SalesExport();
+        $fileName = $export->export();
+
+        return response()->download(
+            storage_path('app/public/' . $fileName)
+        );
     }
 
 }

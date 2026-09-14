@@ -31,13 +31,15 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'size' => 'required',
-            'price' => 'required|numeric'
+            'price' => 'required|numeric',
+            'cost_price' => 'required|numeric'
         ]);
 
         Product::create([
             'name' => $request->name,
             'size' => $request->size,
             'price' => $request->price,
+            'cost_price' => $request->cost_price,
         ]);
 
         return redirect()->route('products.index')
@@ -64,13 +66,15 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required',
             'size' => 'required',
-            'price' => 'required|numeric'
+            'price' => 'required|numeric',
+            'cost_price' => 'required|numeric'
         ]);
 
         $product->update([
             'name' => $request->name,
             'size' => $request->size,
             'price' => $request->price,
+            'cost_price' => $request->cost_price,
         ]);
 
         return redirect()->route('products.index')
