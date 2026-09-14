@@ -7,13 +7,16 @@
             <h2 class="mb-1">Inventory</h2>
             <p class="text-muted mb-0">Live balances calculated from stock movements.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
             <a href="{{ route('inventory.low-stock') }}"
                class="btn {{ $lowStockCount > 0 ? 'btn-danger' : 'btn-outline-success' }}">
                 Low Stock ({{ $lowStockCount }})
             </a>
             <a href="{{ route('inventory.movements') }}" class="btn btn-outline-secondary">
                 Movement History
+            </a>
+            <a href="{{ route('inventory.adjustments.create') }}" class="btn btn-outline-warning">
+                Adjust Stock
             </a>
             <a href="{{ route('inventory.receipts.create') }}" class="btn btn-primary">
                 Record Stock
