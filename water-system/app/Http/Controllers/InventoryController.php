@@ -212,6 +212,97 @@ class InventoryController extends Controller
             ->with('success', 'Inventory stock entry recorded successfully.');
     }
 
+    public function createAdjustment()
+    {
+        $items = InventoryItem::query()
+            ->where('is_active', true)
+            ->where('category', '!=', 'raw_water')
+            ->withSum('stockMovements as stock_balance', 'quantity_delta')
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        return view('inventory.adjust', compact('items'));
+    }
+
+    public function storeAdjustment(Request $request)
+    {
+        $validated = $request->validate([
+            'inventory_item_id' => ['required', 'integer', 'exists:inventory_items,id'],
+            'adjustment_type' => [
+                'required',
+                Rule::in([
+                    'damage',
+                    'wastage',
+                    'stock_correction_increase',
+                    'stock_correction_decrease',
+                ]),
+            ],
+            'quantity' => ['required', 'numeric', 'gt:0', 'max:999999999999.999'],
+            'occurred_at' => ['required', 'date'],
+            'reference' => ['nullable', 'string', 'max:150'],
+            'notes' => ['required', 'string', 'max:1000'],
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $item = InventoryItem::query()
+                ->whereKey($validated['inventory_item_id'])
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$item || $item->category === 'raw_water') {
+                throw ValidationException::withMessages([
+                    'inventory_item_id' => 'Raw borehole water is meter-managed and cannot be manually adjusted here.',
+                ]);
+            }
+
+            $decreaseTypes = [
+                'damage',
+                'wastage',
+                'stock_correction_decrease',
+            ];
+
+            $isDecrease = in_array(
+                $validated['adjustment_type'],
+                $decreaseTypes,
+                true
+            );
+
+            $quantity = (float) $validated['quantity'];
+
+            if ($isDecrease) {
+                $currentBalance = (float) StockMovement::query()
+                    ->where('inventory_item_id', $item->id)
+                    ->sum('quantity_delta');
+
+                if ($quantity > $currentBalance) {
+                    throw ValidationException::withMessages([
+                        'quantity' => 'The adjustment cannot remove more stock than the current live balance of '.number_format($currentBalance, 3).' '.$item->unit.'.',
+                    ]);
+                }
+            }
+
+            $reference = isset($validated['reference'])
+                ? trim($validated['reference'])
+                : null;
+
+            StockMovement::create([
+                'inventory_item_id' => $item->id,
+                'movement_type' => $validated['adjustment_type'],
+                'quantity_delta' => $isDecrease ? -$quantity : $quantity,
+                'created_by' => auth()->id(),
+                'occurred_at' => $validated['occurred_at'],
+                'reference' => $reference !== '' ? $reference : null,
+                'notes' => trim($validated['notes']),
+            ]);
+        }, 3);
+
+        return redirect()
+            ->route('inventory.index')
+            ->with('success', 'Stock adjustment recorded successfully.');
+    }
+
     private function lowStockQuery()
     {
         return InventoryItem::query()
