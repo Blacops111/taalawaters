@@ -20,7 +20,46 @@ class InventoryController extends Controller
             ->orderBy('name')
             ->paginate(50);
 
-        return view('inventory.index', compact('items'));
+        $lowStockCount = $this->lowStockQuery()->count();
+
+        return view('inventory.index', compact('items', 'lowStockCount'));
+    }
+
+    public function lowStock()
+    {
+        $items = $this->lowStockQuery()
+            ->withSum('stockMovements as stock_balance', 'quantity_delta')
+            ->orderBy('category')
+            ->orderBy('name')
+            ->paginate(50);
+
+        return view('inventory.low-stock', compact('items'));
+    }
+
+    public function updateReorderLevel(Request $request, InventoryItem $inventoryItem)
+    {
+        if (!$inventoryItem->is_active) {
+            abort(404);
+        }
+
+        if ($inventoryItem->category === 'raw_water') {
+            throw ValidationException::withMessages([
+                'reorder_level' => 'Raw borehole water is meter-managed and does not use a purchasing reorder level.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'reorder_level' => ['required', 'numeric', 'min:0', 'max:999999999999.999'],
+        ]);
+
+        $inventoryItem->update([
+            'reorder_level' => $validated['reorder_level'],
+        ]);
+
+        return back()->with(
+            'success',
+            'Reorder level updated for '.$inventoryItem->name.'.'
+        );
     }
 
     public function movements(Request $request)
@@ -171,5 +210,19 @@ class InventoryController extends Controller
         return redirect()
             ->route('inventory.index')
             ->with('success', 'Inventory stock entry recorded successfully.');
+    }
+
+    private function lowStockQuery()
+    {
+        return InventoryItem::query()
+            ->where('is_active', true)
+            ->where('category', '!=', 'raw_water')
+            ->where('reorder_level', '>', 0)
+            ->whereRaw(
+                '(SELECT COALESCE(SUM(stock_movements.quantity_delta), 0) '
+                .'FROM stock_movements '
+                .'WHERE stock_movements.inventory_item_id = inventory_items.id) '
+                .'<= inventory_items.reorder_level'
+            );
     }
 }
