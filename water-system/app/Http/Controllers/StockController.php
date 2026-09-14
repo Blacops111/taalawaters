@@ -2,52 +2,43 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Stock;
 use App\Models\Product;
+use App\Models\Stock;
+use Illuminate\Http\Request;
 
 class StockController extends Controller
 {
-
-    // Show stock list
     public function index()
     {
         $stocks = Stock::with('product')->get();
 
-        return view('stocks.index',
-            compact('stocks'));
+        return view('stocks.index', compact('stocks'));
     }
 
-
-    // Show add stock form
     public function create()
     {
         $products = Product::all();
 
-        return view('stocks.create',
-            compact('products'));
+        return view('stocks.create', compact('products'));
     }
 
-
-    // Store new stock
     public function store(Request $request)
     {
-        $request->validate([
-            'product_id' => 'required',
-            'quantity_added' => 'required|numeric',
-            'date_added' => 'required|date'
+        $validated = $request->validate([
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'quantity_added' => ['required', 'integer', 'min:1'],
+            'date_added' => ['required', 'date'],
         ]);
 
         Stock::create([
-            'product_id' => $request->product_id,
-            'quantity_added' => $request->quantity_added,
-            'quantity_remaining' => $request->quantity_added,
-            'date_added' => $request->date_added
+            'product_id' => $validated['product_id'],
+            'quantity_added' => $validated['quantity_added'],
+            'quantity_remaining' => $validated['quantity_added'],
+            'date_added' => $validated['date_added'],
         ]);
 
-        return redirect()->route('stocks.index')
-                         ->with('success',
-                         'Stock added successfully');
+        return redirect()
+            ->route('stocks.index')
+            ->with('success', 'Stock added successfully');
     }
-
 }

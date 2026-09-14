@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Stock;
 use App\Models\Sale;
+use App\Models\Stock;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -12,153 +12,112 @@ class DashboardController extends Controller
 {
     public function index()
     {
-
-        // Cards Data
         $totalProducts = Product::count();
-
-        $totalStock =
-            Stock::sum('quantity_remaining');
-
+        $totalStock = Stock::sum('quantity_remaining');
         $totalSales = Sale::count();
+        $totalRevenue = Sale::sum('total_amount');
 
-        $totalRevenue =
-            Sale::sum('total_amount');
+        $profitSummary = DB::table('sales')
+            ->join('products', 'sales.product_id', '=', 'products.id')
+            ->selectRaw(
+                'COALESCE(SUM((sales.price - products.cost_price) * sales.quantity_sold), 0) as total_profit'
+            )
+            ->first();
 
-        // Total Profit
+        $totalProfit = (float) ($profitSummary->total_profit ?? 0);
 
-        $totalProfit = Sale::with('product')->get()
-            ->sum(function ($sale) {
+        $monthlyProfitRows = DB::table('sales')
+            ->join('products', 'sales.product_id', '=', 'products.id')
+            ->selectRaw('YEAR(sales.sale_date) as year')
+            ->selectRaw('MONTH(sales.sale_date) as month')
+            ->selectRaw(
+                'SUM((sales.price - products.cost_price) * sales.quantity_sold) as total_profit'
+            )
+            ->groupByRaw('YEAR(sales.sale_date), MONTH(sales.sale_date)')
+            ->orderByRaw('YEAR(sales.sale_date), MONTH(sales.sale_date)')
+            ->get();
 
-                $profitPerUnit =
-                    $sale->product->price -
-                    $sale->product->cost_price;
+        $profitLabels = $monthlyProfitRows->map(function ($row) {
+            return Carbon::create((int) $row->year, (int) $row->month, 1)
+                ->format('M Y');
+        });
 
-                return $profitPerUnit *
-                       $sale->quantity_sold;
-            });
-
-        // Monthly Profit Chart
-
-        $monthlyProfit = Sale::with('product')
-            ->get()
-            ->groupBy(function ($sale) {
-                return Carbon::parse($sale->created_at)
-                    ->format('M');
-            })
-            ->map(function ($sales) {
-
-                return $sales->sum(function ($sale) {
-
-                    $profitPerUnit =
-                        $sale->product->price -
-                        $sale->product->cost_price;
-
-                    return $profitPerUnit *
-                           $sale->quantity_sold;
-                });
-
-            });
-
-        // Prepare labels & values
-
-        $profitLabels = $monthlyProfit->keys();
-        $profitData = $monthlyProfit->values();
-
-
-        // Graph Data (Sales per Day)
+        $profitData = $monthlyProfitRows->map(function ($row) {
+            return (float) $row->total_profit;
+        });
 
         $salesData = Sale::select(
-                DB::raw('DATE(created_at) as date'),
+                'sale_date as date',
                 DB::raw('SUM(total_amount) as total')
             )
-            ->groupBy('date')
-            ->orderBy('date')
+            ->groupBy('sale_date')
+            ->orderBy('sale_date')
             ->get();
 
         $dates = $salesData->pluck('date');
-
         $totals = $salesData->pluck('total');
 
-        // Product Sales Pie Chart (Fixed)
-        $productSales = Sale::select(
-                'product_id',
-                DB::raw('SUM(quantity_sold) as total_qty')
-            )
-            ->groupBy('product_id')
-            ->with('product')
+        $productSales = DB::table('sales')
+            ->join('products', 'sales.product_id', '=', 'products.id')
+            ->select('products.id', 'products.name')
+            ->selectRaw('SUM(sales.quantity_sold) as total_qty')
+            ->groupBy('products.id', 'products.name')
+            ->orderBy('products.name')
             ->get();
 
-        $productNames = $productSales
-            ->map(function ($sale) {
-                return $sale->product->name ?? 'Unknown';
-            });
+        $productNames = $productSales->pluck('name');
+        $productQuantities = $productSales->pluck('total_qty');
 
-        $productQuantities = $productSales
-            ->pluck('total_qty');
-
-        // Stock Levels Bar Chart
-
-        $stocks = Stock::with('product')->get();
+        $stocks = Stock::with('product')
+            ->select('product_id')
+            ->selectRaw('SUM(quantity_remaining) as quantity_remaining')
+            ->groupBy('product_id')
+            ->get();
 
         $stockLabels = [];
         $stockData = [];
         $stockColors = [];
 
         foreach ($stocks as $stock) {
+            $stockLabels[] = $stock->product->name ?? 'Unknown';
+            $stockData[] = (int) $stock->quantity_remaining;
 
-            $stockLabels[] = $stock->product->name;
-            $stockData[] = $stock->quantity_remaining;
-
-            // Color logic
             if ($stock->quantity_remaining < 10) {
-                $stockColors[] = 'rgba(255, 99, 132, 0.8)'; // RED (Low Stock)
+                $stockColors[] = 'rgba(255, 99, 132, 0.8)';
             } else {
-                $stockColors[] = 'rgba(54, 162, 235, 0.8)'; // BLUE (Normal)
+                $stockColors[] = 'rgba(54, 162, 235, 0.8)';
             }
         }
 
-        $monthlyProfits = Sale::select(
-                DB::raw('MONTH(created_at) as month'),
-                DB::raw('SUM(total_amount) as total_profit')
-            )
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        $monthlyProfits = $monthlyProfitRows;
+        $months = $profitLabels->values()->all();
+        $profits = $profitData->values()->all();
 
-        $months = [];
-        $profits = [];
+        $lowStockProducts = $stocks
+            ->filter(function ($stock) {
+                return $stock->quantity_remaining < 10;
+            })
+            ->values();
 
-        foreach ($monthlyProfits as $data) {
-            $months[] = date("F", mktime(0, 0, 0, $data->month, 1));
-            $profits[] = $data->total_profit;
-        }
-
-        // Low Stock Alert (Correct Logic)
-        $lowStockProducts = Stock::with('product')
-            ->where('quantity_remaining', '<', 10)
-            ->get();
-
-
-        return view('dashboard',
-            compact(
-                'totalProducts',
-                'totalStock',
-                'totalSales',
-                'totalRevenue',
-                'totalProfit',
-                'profitLabels',
-                'profitData',
-                'dates',
-                'totals',
-                'productNames',
-                'productQuantities',
-                'stockLabels',
-                'stockData',
-                'stockColors',
-                'lowStockProducts',
-                'monthlyProfits',
-                'months',
-                'profits'
-            ));
+        return view('dashboard', compact(
+            'totalProducts',
+            'totalStock',
+            'totalSales',
+            'totalRevenue',
+            'totalProfit',
+            'profitLabels',
+            'profitData',
+            'dates',
+            'totals',
+            'productNames',
+            'productQuantities',
+            'stockLabels',
+            'stockData',
+            'stockColors',
+            'lowStockProducts',
+            'monthlyProfits',
+            'months',
+            'profits'
+        ));
     }
 }

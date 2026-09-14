@@ -9,7 +9,8 @@ class Product extends Model
     protected $fillable = [
         'name',
         'size',
-        'price'
+        'price',
+        'cost_price',
     ];
 
     public function stocks()
