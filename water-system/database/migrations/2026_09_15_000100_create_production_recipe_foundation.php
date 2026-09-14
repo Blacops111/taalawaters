@@ -31,10 +31,10 @@ return new class extends Migration
             $table->decimal('quantity_required', 16, 3);
             $table->timestamps();
 
-            $table->unique([
-                'production_recipe_id',
-                'inventory_item_id',
-            ]);
+            $table->unique(
+                ['production_recipe_id', 'inventory_item_id'],
+                'prod_recipe_component_unique'
+            );
         });
     }
 
