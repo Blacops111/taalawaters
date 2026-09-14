@@ -45,6 +45,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/inventory/receipts', [InventoryController::class, 'storeReceipt'])
         ->name('inventory.receipts.store');
 
+    Route::get('/inventory/adjustments/create', [InventoryController::class, 'createAdjustment'])
+        ->name('inventory.adjustments.create');
+
+    Route::post('/inventory/adjustments', [InventoryController::class, 'storeAdjustment'])
+        ->name('inventory.adjustments.store');
+
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');
 
