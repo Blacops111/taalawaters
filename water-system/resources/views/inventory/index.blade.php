@@ -7,9 +7,14 @@
             <h2 class="mb-1">Inventory</h2>
             <p class="text-muted mb-0">Live balances calculated from stock movements.</p>
         </div>
-        <a href="{{ route('inventory.receipts.create') }}" class="btn btn-primary">
-            Record Stock
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('inventory.movements') }}" class="btn btn-outline-secondary">
+                Movement History
+            </a>
+            <a href="{{ route('inventory.receipts.create') }}" class="btn btn-primary">
+                Record Stock
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
