@@ -30,6 +30,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
 
+    Route::get('/inventory/low-stock', [InventoryController::class, 'lowStock'])
+        ->name('inventory.low-stock');
+
+    Route::patch('/inventory/{inventoryItem}/reorder-level', [InventoryController::class, 'updateReorderLevel'])
+        ->name('inventory.reorder-level.update');
+
     Route::get('/inventory/movements', [InventoryController::class, 'movements'])
         ->name('inventory.movements');
 
