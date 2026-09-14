@@ -23,6 +23,59 @@ class InventoryController extends Controller
         return view('inventory.index', compact('items'));
     }
 
+    public function movements(Request $request)
+    {
+        $validated = $request->validate([
+            'inventory_item_id' => ['nullable', 'integer', 'exists:inventory_items,id'],
+            'movement_type' => ['nullable', 'string', 'max:50'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+
+        $items = InventoryItem::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'sku', 'name']);
+
+        $movementTypes = StockMovement::query()
+            ->select('movement_type')
+            ->distinct()
+            ->orderBy('movement_type')
+            ->pluck('movement_type');
+
+        $movements = StockMovement::query()
+            ->with([
+                'inventoryItem:id,sku,name,unit',
+                'creator:id,name',
+            ])
+            ->when(
+                $validated['inventory_item_id'] ?? null,
+                fn ($query, $itemId) => $query->where('inventory_item_id', $itemId)
+            )
+            ->when(
+                $validated['movement_type'] ?? null,
+                fn ($query, $movementType) => $query->where('movement_type', $movementType)
+            )
+            ->when(
+                $validated['from'] ?? null,
+                fn ($query, $from) => $query->whereDate('occurred_at', '>=', $from)
+            )
+            ->when(
+                $validated['to'] ?? null,
+                fn ($query, $to) => $query->whereDate('occurred_at', '<=', $to)
+            )
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('inventory.movements', compact(
+            'movements',
+            'items',
+            'movementTypes'
+        ));
+    }
+
     public function createReceipt()
     {
         $items = InventoryItem::query()
