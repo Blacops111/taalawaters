@@ -33,7 +33,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
-            $table->timestamp('occurred_at')->index();
+            $table->dateTime('occurred_at')->index();
             $table->string('reference', 150)->nullable()->index();
             $table->text('notes')->nullable();
             $table->timestamps();
@@ -56,8 +56,8 @@ return new class extends Migration
             $table->string('token_hash', 64);
             $table->decimal('max_flow_litres_per_minute', 16, 3)->nullable();
             $table->decimal('last_reading_litres', 18, 3)->nullable();
-            $table->timestamp('last_reading_at')->nullable();
-            $table->timestamp('last_seen_at')->nullable();
+            $table->dateTime('last_reading_at')->nullable();
+            $table->dateTime('last_seen_at')->nullable();
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
         });
@@ -73,8 +73,8 @@ return new class extends Migration
             $table->decimal('delta_litres', 18, 3)->nullable();
             $table->string('status', 30)->index();
             $table->string('review_reason')->nullable();
-            $table->timestamp('reading_at')->index();
-            $table->timestamp('received_at');
+            $table->dateTime('reading_at')->index();
+            $table->dateTime('received_at');
             $table->json('metadata')->nullable();
             $table->timestamps();
 
