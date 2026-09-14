@@ -7,7 +7,16 @@
             <h2 class="mb-1">Inventory</h2>
             <p class="text-muted mb-0">Live balances calculated from stock movements.</p>
         </div>
+        <a href="{{ route('inventory.receipts.create') }}" class="btn btn-primary">
+            Record Stock
+        </a>
     </div>
+
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <div class="card">
         <div class="card-body p-0">
