@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
@@ -25,6 +26,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin-test', function () {
         return 'Admin Access Granted';
     });
+
+    Route::get('/inventory', [InventoryController::class, 'index'])
+        ->name('inventory.index');
 
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');

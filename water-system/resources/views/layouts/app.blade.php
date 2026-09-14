@@ -62,6 +62,13 @@
 
                     </a>
 
+                    <a href="{{ route('inventory.index') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        Inventory
+
+                    </a>
+
                     <a href="{{ route('products.index') }}"
                        class="text-gray-700 hover:text-blue-500">
 
