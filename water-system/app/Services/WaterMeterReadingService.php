@@ -34,7 +34,11 @@ class WaterMeterReadingService
                 ];
             }
 
-            $readingAt = CarbonImmutable::parse($payload['reading_at']);
+            // Normalize incoming timestamps to UTC before persistence/comparison.
+            // Database datetime columns do not preserve timezone offsets, so storing
+            // an offset timestamp directly can make a later reading appear older.
+            $readingAt = CarbonImmutable::parse($payload['reading_at'])->utc();
+
             $normalizedLitres = $this->toLitres(
                 (float) $payload['reading_value'],
                 $lockedMeter->reading_unit
@@ -96,7 +100,7 @@ class WaterMeterReadingService
                 'status' => $status,
                 'review_reason' => $reviewReason,
                 'reading_at' => $readingAt,
-                'received_at' => now(),
+                'received_at' => now()->utc(),
                 'metadata' => $payload['metadata'] ?? null,
             ]);
 
@@ -113,7 +117,7 @@ class WaterMeterReadingService
                 ]);
             }
 
-            $lockedMeter->last_seen_at = now();
+            $lockedMeter->last_seen_at = now()->utc();
 
             if (in_array($status, ['baseline', 'accepted'], true)) {
                 $lockedMeter->last_reading_litres = $normalizedLitres;
