@@ -8,6 +8,10 @@
             <p class="text-muted mb-0">Live balances calculated from stock movements.</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ route('inventory.low-stock') }}"
+               class="btn {{ $lowStockCount > 0 ? 'btn-danger' : 'btn-outline-success' }}">
+                Low Stock ({{ $lowStockCount }})
+            </a>
             <a href="{{ route('inventory.movements') }}" class="btn btn-outline-secondary">
                 Movement History
             </a>
@@ -23,6 +27,12 @@
         </div>
     @endif
 
+    @if($errors->any())
+        <div class="alert alert-danger">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -34,7 +44,7 @@
                             <th>Category</th>
                             <th>Unit</th>
                             <th class="text-end">Live Balance</th>
-                            <th class="text-end">Reorder Level</th>
+                            <th>Reorder Level</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -50,13 +60,34 @@
                                 <td>{{ \Illuminate\Support\Str::headline($item->category) }}</td>
                                 <td>{{ $item->unit === 'litre' ? 'Litre' : \Illuminate\Support\Str::headline($item->unit) }}</td>
                                 <td class="text-end fw-semibold">{{ number_format($balance, 3) }}</td>
-                                <td class="text-end">{{ number_format($reorderLevel, 3) }}</td>
+                                <td style="min-width: 210px;">
+                                    @if($item->category === 'raw_water')
+                                        <span class="text-muted">Meter managed</span>
+                                    @else
+                                        <form method="POST"
+                                              action="{{ route('inventory.reorder-level.update', $item) }}"
+                                              class="d-flex gap-2">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="number"
+                                                   name="reorder_level"
+                                                   class="form-control form-control-sm"
+                                                   min="0"
+                                                   step="0.001"
+                                                   value="{{ number_format($reorderLevel, 3, '.', '') }}"
+                                                   aria-label="Reorder level for {{ $item->name }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                Save
+                                            </button>
+                                        </form>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($balance < 0)
                                         <span class="badge bg-danger">Negative Stock</span>
                                     @elseif($balance == 0)
                                         <span class="badge bg-secondary">Out of Stock</span>
-                                    @elseif($balance <= $reorderLevel)
+                                    @elseif($reorderLevel > 0 && $balance <= $reorderLevel)
                                         <span class="badge bg-warning text-dark">Low Stock</span>
                                     @else
                                         <span class="badge bg-success">In Stock</span>
