@@ -37,7 +37,7 @@ class ProductionRunController extends Controller
     {
         $validated = $request->validate([
             'production_recipe_id' => ['required', 'integer', 'exists:production_recipes,id'],
-            'quantity_produced' => ['required', 'numeric', 'gt:0', 'max:999999999999.999'],
+            'quantity_produced' => ['required', 'integer', 'min:1', 'max:999999999999'],
             'occurred_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
@@ -61,7 +61,7 @@ class ProductionRunController extends Controller
             ->route('production.runs.create')
             ->with(
                 'success',
-                $run->reference.' completed. '.number_format((float) $run->quantity_produced, 3).' '.$run->finishedProduct->unit.' of '.$run->finishedProduct->name.' added to finished stock.'
+                $run->reference.' completed. '.number_format((float) $run->quantity_produced, 0).' '.$run->finishedProduct->unit.' of '.$run->finishedProduct->name.' added to finished stock.'
             );
     }
 }
