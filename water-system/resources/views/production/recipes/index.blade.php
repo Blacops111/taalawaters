@@ -7,9 +7,14 @@
             <h2 class="mb-1">Production Recipes</h2>
             <p class="text-muted mb-0">Define the materials required to produce each finished-water SKU.</p>
         </div>
-        <a href="{{ route('inventory.index') }}" class="btn btn-outline-secondary">
-            Back to Inventory
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('production.runs.create') }}" class="btn btn-primary">
+                Record Production
+            </a>
+            <a href="{{ route('inventory.index') }}" class="btn btn-outline-secondary">
+                Back to Inventory
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
