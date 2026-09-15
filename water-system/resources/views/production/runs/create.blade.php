@@ -59,14 +59,15 @@
                         <label for="quantity_produced" class="form-label">Quantity Produced</label>
                         <input
                             type="number"
-                            min="0.001"
-                            step="0.001"
+                            min="1"
+                            step="1"
                             id="quantity_produced"
                             name="quantity_produced"
                             value="{{ old('quantity_produced') }}"
                             class="form-control @error('quantity_produced') is-invalid @enderror"
                             required
                         >
+                        <div class="form-text">Enter whole finished units only, for example 1, 10, or 100 bottles.</div>
                     </div>
 
                     <div class="col-md-3">
@@ -128,7 +129,7 @@
                                 <td>{{ $run->occurred_at?->format('Y-m-d H:i') }}</td>
                                 <td>{{ $run->finishedProduct?->name }}</td>
                                 <td class="text-end">
-                                    {{ number_format((float) $run->quantity_produced, 3) }} {{ $run->finishedProduct?->unit }}
+                                    {{ number_format((float) $run->quantity_produced, 0) }} {{ $run->finishedProduct?->unit }}
                                 </td>
                                 <td>{{ $run->creator?->name ?? $run->creator?->email ?? 'System' }}</td>
                             </tr>
