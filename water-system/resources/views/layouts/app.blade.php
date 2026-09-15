@@ -69,6 +69,13 @@
 
                     </a>
 
+                    <a href="{{ route('production.recipes.index') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        Production
+
+                    </a>
+
                     <a href="{{ route('products.index') }}"
                        class="text-gray-700 hover:text-blue-500">
 
