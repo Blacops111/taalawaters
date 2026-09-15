@@ -98,6 +98,27 @@ class ProductionRunServiceTest extends TestCase
         $this->assertEquals(0.0, (float) $finishedProduct->stockMovements()->sum('quantity_delta'));
     }
 
+    public function test_fractional_finished_units_are_rejected_without_changing_stock(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$recipe, $rawWater, $bottle, $finishedProduct] = $this->makeRecipe();
+
+        $this->addStock($rawWater, 10);
+        $this->addStock($bottle, 10);
+
+        try {
+            app(ProductionRunService::class)->complete($recipe, 0.5, $admin);
+            $this->fail('Expected fractional finished units to be rejected.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('quantity_produced', $exception->errors());
+        }
+
+        $this->assertSame(0, ProductionRun::count());
+        $this->assertEquals(10.0, (float) $rawWater->stockMovements()->sum('quantity_delta'));
+        $this->assertEquals(10.0, (float) $bottle->stockMovements()->sum('quantity_delta'));
+        $this->assertEquals(0.0, (float) $finishedProduct->stockMovements()->sum('quantity_delta'));
+    }
+
     public function test_recipe_output_quantity_scales_component_consumption(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
