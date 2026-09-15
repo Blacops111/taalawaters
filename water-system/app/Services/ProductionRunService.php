@@ -26,6 +26,12 @@ class ProductionRunService
             throw new InvalidArgumentException('Production quantity must be greater than zero.');
         }
 
+        if (abs($quantityProduced - round($quantityProduced)) > 0.000001) {
+            throw ValidationException::withMessages([
+                'quantity_produced' => 'Production quantity must be a whole number of finished units.',
+            ]);
+        }
+
         $occurredAtUtc = $occurredAt
             ? CarbonImmutable::instance($occurredAt)->utc()
             : now()->utc();
@@ -137,7 +143,7 @@ class ProductionRunService
             $run = ProductionRun::create([
                 'production_recipe_id' => $lockedRecipe->id,
                 'finished_product_id' => $lockedRecipe->finished_product_id,
-                'quantity_produced' => round($quantityProduced, 3),
+                'quantity_produced' => round($quantityProduced),
                 'recipe_output_quantity' => $recipeOutputQuantity,
                 'status' => 'completed',
                 'occurred_at' => $occurredAtUtc,
@@ -165,7 +171,7 @@ class ProductionRunService
             StockMovement::create([
                 'inventory_item_id' => $lockedRecipe->finished_product_id,
                 'movement_type' => 'production_output',
-                'quantity_delta' => round($quantityProduced, 3),
+                'quantity_delta' => round($quantityProduced),
                 'source_type' => ProductionRun::class,
                 'source_id' => $run->id,
                 'created_by' => $user?->id,
