@@ -70,7 +70,10 @@ class ProductionRunServiceTest extends TestCase
         $this->assertEquals(95.0, (float) $rawWater->stockMovements()->sum('quantity_delta'));
         $this->assertEquals(90.0, (float) $bottle->stockMovements()->sum('quantity_delta'));
         $this->assertEquals(10.0, (float) $finishedProduct->stockMovements()->sum('quantity_delta'));
-        $this->assertSame('PROD-00000001', $run->reference);
+        $this->assertSame(
+            'PROD-'.str_pad((string) $run->id, 8, '0', STR_PAD_LEFT),
+            $run->reference
+        );
     }
 
     public function test_insufficient_component_stock_rolls_back_the_entire_run(): void
