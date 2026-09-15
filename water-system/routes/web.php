@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductionRecipeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\StockController;
@@ -50,6 +51,15 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::post('/inventory/adjustments', [InventoryController::class, 'storeAdjustment'])
         ->name('inventory.adjustments.store');
+
+    Route::get('/production/recipes', [ProductionRecipeController::class, 'index'])
+        ->name('production.recipes.index');
+
+    Route::get('/production/recipes/{finishedProduct}/edit', [ProductionRecipeController::class, 'edit'])
+        ->name('production.recipes.edit');
+
+    Route::put('/production/recipes/{finishedProduct}', [ProductionRecipeController::class, 'update'])
+        ->name('production.recipes.update');
 
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');
