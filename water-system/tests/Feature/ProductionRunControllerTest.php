@@ -58,6 +58,30 @@ class ProductionRunControllerTest extends TestCase
         $this->assertEquals(10.0, (float) $finishedProduct->stockMovements()->sum('quantity_delta'));
     }
 
+    public function test_fractional_finished_units_are_rejected_by_form_validation(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$recipe, $rawWater, $bottle, $finishedProduct] = $this->makeRecipe();
+
+        $this->addStock($rawWater, 20);
+        $this->addStock($bottle, 20);
+
+        $this->actingAs($admin)
+            ->from(route('production.runs.create'))
+            ->post(route('production.runs.store'), [
+                'production_recipe_id' => $recipe->id,
+                'quantity_produced' => 0.5,
+                'occurred_at' => '2026-09-15T09:00',
+            ])
+            ->assertRedirect(route('production.runs.create'))
+            ->assertSessionHasErrors('quantity_produced');
+
+        $this->assertDatabaseCount('production_runs', 0);
+        $this->assertEquals(20.0, (float) $rawWater->stockMovements()->sum('quantity_delta'));
+        $this->assertEquals(20.0, (float) $bottle->stockMovements()->sum('quantity_delta'));
+        $this->assertEquals(0.0, (float) $finishedProduct->stockMovements()->sum('quantity_delta'));
+    }
+
     public function test_failed_form_run_does_not_change_any_inventory(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
