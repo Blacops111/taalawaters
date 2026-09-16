@@ -57,7 +57,7 @@ class SalesOrderCompletionControllerTest extends TestCase
         $this->actingAs($admin)
             ->get(route('sales-orders.edit', $order))
             ->assertOk()
-            ->assertSee('Complete Sale & Deduct Stock');
+            ->assertSee('Complete Sale & Deduct Stock', false);
 
         $this->actingAs($admin)
             ->post(route('sales-orders.complete', $order))
