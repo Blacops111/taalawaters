@@ -4,8 +4,8 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <h2 class="mb-1">Completed Sales History</h2>
-            <p class="text-muted mb-0">Read-only record of V2 sales that have already deducted finished-product inventory.</p>
+            <h2 class="mb-1">Sales History</h2>
+            <p class="text-muted mb-0">Read-only record of completed and reversed V2 sales with their original sale values preserved.</p>
         </div>
         <a href="{{ route('sales-orders.create') }}" class="btn btn-outline-secondary">
             Back to V2 Sales
@@ -13,12 +13,12 @@
     </div>
 
     <div class="alert alert-info">
-        Completed sales are read-only. Corrections must not overwrite the original sale or its inventory movements.
+        Completed sales are read-only. Reversed sales remain in this history for audit purposes and are excluded from active completed-sales reports.
     </div>
 
     <div class="card mb-4">
         <div class="card-header">
-            <strong>Filter Completed Sales</strong>
+            <strong>Filter Sales History</strong>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ route('sales-orders.history') }}">
@@ -121,7 +121,13 @@
                                 </td>
                                 <td>{{ $sale->creator?->name ?? 'System' }}</td>
                                 <td class="text-end fw-semibold">KES {{ number_format((float) $sale->total_amount, 2) }}</td>
-                                <td><span class="badge bg-success">Completed</span></td>
+                                <td>
+                                    @if($sale->status === \App\Models\SalesOrder::STATUS_REVERSED)
+                                        <span class="badge bg-warning text-dark">Reversed</span>
+                                    @else
+                                        <span class="badge bg-success">Completed</span>
+                                    @endif
+                                </td>
                                 <td class="text-end">
                                     <a href="{{ route('sales-orders.show', $sale) }}" class="btn btn-sm btn-outline-primary">View</a>
                                 </td>
@@ -129,7 +135,7 @@
                         @empty
                             <tr>
                                 <td colspan="9" class="text-center text-muted py-4">
-                                    No completed V2 sales match the selected filters.
+                                    No completed or reversed V2 sales match the selected filters.
                                 </td>
                             </tr>
                         @endforelse
