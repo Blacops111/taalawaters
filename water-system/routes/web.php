@@ -119,6 +119,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])
         ->name('sales-orders.show');
 
+    Route::get('/sales-orders/{salesOrder}/reversal', [SalesOrderController::class, 'reversal'])
+        ->name('sales-orders.reversal');
+
+    Route::post('/sales-orders/{salesOrder}/reversal', [SalesOrderController::class, 'reverse'])
+        ->name('sales-orders.reverse');
+
     Route::get('/sales-orders/{salesOrder}/edit', [SalesOrderController::class, 'edit'])
         ->name('sales-orders.edit');
 
