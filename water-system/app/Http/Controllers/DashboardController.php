@@ -26,19 +26,20 @@ class DashboardController extends Controller
 
         $totalProfit = (float) ($profitSummary->total_profit ?? 0);
 
+        // SUBSTR works with both the MySQL production database and the
+        // SQLite in-memory database used by the automated test suite.
         $monthlyProfitRows = DB::table('sales')
             ->join('products', 'sales.product_id', '=', 'products.id')
-            ->selectRaw('YEAR(sales.sale_date) as year')
-            ->selectRaw('MONTH(sales.sale_date) as month')
+            ->selectRaw('SUBSTR(sales.sale_date, 1, 7) as month_key')
             ->selectRaw(
                 'SUM((sales.price - products.cost_price) * sales.quantity_sold) as total_profit'
             )
-            ->groupByRaw('YEAR(sales.sale_date), MONTH(sales.sale_date)')
-            ->orderByRaw('YEAR(sales.sale_date), MONTH(sales.sale_date)')
+            ->groupByRaw('SUBSTR(sales.sale_date, 1, 7)')
+            ->orderByRaw('SUBSTR(sales.sale_date, 1, 7)')
             ->get();
 
         $profitLabels = $monthlyProfitRows->map(function ($row) {
-            return Carbon::create((int) $row->year, (int) $row->month, 1)
+            return Carbon::createFromFormat('Y-m-d', $row->month_key.'-01')
                 ->format('M Y');
         });
 
