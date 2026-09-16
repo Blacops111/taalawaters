@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\V2SalesReportExport;
 use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\SalesOrder;
@@ -13,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class SalesOrderController extends Controller
 {
@@ -109,6 +111,27 @@ class SalesOrderController extends Controller
             ->setPaper('a4', 'portrait');
 
         return $pdf->download('taala_v2_sales_report.pdf');
+    }
+
+    public function reportExcel(Request $request)
+    {
+        $filters = $this->validateReportFilters($request);
+        $spreadsheet = (new V2SalesReportExport(
+            $this->salesReportData($filters)
+        ))->build();
+
+        return response()->streamDownload(
+            function () use ($spreadsheet) {
+                $writer = new Xlsx($spreadsheet);
+                $writer->save('php://output');
+                $spreadsheet->disconnectWorksheets();
+            },
+            'taala_v2_sales_report.xlsx',
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            ]
+        );
     }
 
     public function show(SalesOrder $salesOrder)
