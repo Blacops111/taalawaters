@@ -8,8 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesOrder extends Model
 {
+    public const TYPE_WALK_IN = 'walk_in';
+    public const TYPE_BUSINESS = 'business';
+    public const STATUS_DRAFT = 'draft';
+
     protected $fillable = [
         'customer_id',
+        'sale_type',
         'reference',
         'status',
         'sale_at',
