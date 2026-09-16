@@ -93,4 +93,45 @@ class SalesOrderDraftItemService
             return $item->fresh(['inventoryItem', 'salesOrder']);
         }, 3);
     }
+
+    public function removeItem(
+        SalesOrder $salesOrder,
+        SalesOrderItem $salesOrderItem,
+    ): SalesOrder {
+        return DB::transaction(function () use ($salesOrder, $salesOrderItem) {
+            $lockedOrder = SalesOrder::query()
+                ->lockForUpdate()
+                ->findOrFail($salesOrder->id);
+
+            if ($lockedOrder->status !== SalesOrder::STATUS_DRAFT) {
+                throw ValidationException::withMessages([
+                    'sales_order' => 'Items can only be removed while the sale is still a draft.',
+                ]);
+            }
+
+            $lockedItem = SalesOrderItem::query()
+                ->whereKey($salesOrderItem->id)
+                ->where('sales_order_id', $lockedOrder->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $lockedItem) {
+                throw ValidationException::withMessages([
+                    'sales_order_item' => 'The selected sale item does not belong to this draft.',
+                ]);
+            }
+
+            $lockedItem->delete();
+
+            $lockedOrder->update([
+                'total_amount' => $lockedOrder->items()->sum('line_total'),
+            ]);
+
+            return $lockedOrder->fresh([
+                'customer',
+                'creator',
+                'items.inventoryItem',
+            ]);
+        }, 3);
+    }
 }
