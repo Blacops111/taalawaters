@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SalesOrder extends Model
@@ -13,6 +14,7 @@ class SalesOrder extends Model
     public const TYPE_BUSINESS = 'business';
     public const STATUS_DRAFT = 'draft';
     public const STATUS_COMPLETED = 'completed';
+    public const STATUS_REVERSED = 'reversed';
 
     protected $fillable = [
         'customer_id',
@@ -46,6 +48,11 @@ class SalesOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class);
+    }
+
+    public function reversal(): HasOne
+    {
+        return $this->hasOne(SalesOrderReversal::class);
     }
 
     public function stockMovements(): MorphMany
