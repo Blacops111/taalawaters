@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
@@ -73,6 +74,21 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::put('/production/recipes/{finishedProduct}', [ProductionRecipeController::class, 'update'])
         ->name('production.recipes.update');
+
+    Route::get('/customers', [CustomerController::class, 'index'])
+        ->name('customers.index');
+
+    Route::get('/customers/create', [CustomerController::class, 'create'])
+        ->name('customers.create');
+
+    Route::post('/customers', [CustomerController::class, 'store'])
+        ->name('customers.store');
+
+    Route::get('/customers/{customer}/edit', [CustomerController::class, 'edit'])
+        ->name('customers.edit');
+
+    Route::put('/customers/{customer}', [CustomerController::class, 'update'])
+        ->name('customers.update');
 
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');
