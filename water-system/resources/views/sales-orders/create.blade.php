@@ -86,7 +86,9 @@
                             <th>Type</th>
                             <th>Customer</th>
                             <th>Sale Date</th>
+                            <th>Items</th>
                             <th>Recorded By</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,11 +98,15 @@
                                 <td>{{ $draft->sale_type === 'business' ? 'Business Customer' : 'Walk-in' }}</td>
                                 <td>{{ $draft->customer?->name ?? 'Walk-in' }}</td>
                                 <td>{{ $draft->sale_at?->format('Y-m-d H:i') }}</td>
+                                <td>{{ $draft->items_count }}</td>
                                 <td>{{ $draft->creator?->name ?? 'System' }}</td>
+                                <td class="text-end">
+                                    <a href="{{ route('sales-orders.edit', $draft) }}" class="btn btn-sm btn-outline-primary">Open</a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">No V2 sale drafts yet.</td>
+                                <td colspan="7" class="text-center text-muted py-4">No V2 sale drafts yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
