@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductionRecipe;
 use App\Models\ProductionRun;
+use App\Services\ProductionRunReversalService;
 use App\Services\ProductionRunService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ class ProductionRunController extends Controller
             ->values();
 
         $recentRuns = ProductionRun::query()
-            ->with(['finishedProduct', 'creator'])
+            ->with(['finishedProduct', 'creator', 'reversal'])
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
             ->limit(20)
@@ -62,6 +63,41 @@ class ProductionRunController extends Controller
             ->with(
                 'success',
                 $run->reference.' completed. '.number_format((float) $run->quantity_produced, 0).' '.$run->finishedProduct->unit.' of '.$run->finishedProduct->name.' added to finished stock.'
+            );
+    }
+
+    public function reversal(ProductionRun $productionRun)
+    {
+        $productionRun->load([
+            'finishedProduct',
+            'creator',
+            'reversal.reversedBy',
+            'stockMovements.inventoryItem',
+        ]);
+
+        return view('production.runs.reverse', compact('productionRun'));
+    }
+
+    public function reverse(
+        Request $request,
+        ProductionRun $productionRun,
+        ProductionRunReversalService $productionRunReversalService
+    ) {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:2000'],
+        ]);
+
+        $reversal = $productionRunReversalService->reverse(
+            $productionRun,
+            $request->user(),
+            $validated['reason']
+        );
+
+        return redirect()
+            ->route('production.runs.create')
+            ->with(
+                'success',
+                $productionRun->reference.' was reversed successfully as '.$reversal->reference.'. Inventory was restored using the original production movements.'
             );
     }
 }
