@@ -102,6 +102,7 @@
                             <th>Recorded By</th>
                             <th class="text-end">Total</th>
                             <th>Status</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -121,10 +122,13 @@
                                 <td>{{ $sale->creator?->name ?? 'System' }}</td>
                                 <td class="text-end fw-semibold">KES {{ number_format((float) $sale->total_amount, 2) }}</td>
                                 <td><span class="badge bg-success">Completed</span></td>
+                                <td class="text-end">
+                                    <a href="{{ route('sales-orders.show', $sale) }}" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     No completed V2 sales match the selected filters.
                                 </td>
                             </tr>
