@@ -16,6 +16,78 @@
         Completed sales are read-only. Corrections must not overwrite the original sale or its inventory movements.
     </div>
 
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Filter Completed Sales</strong>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ route('sales-orders.history') }}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="reference" class="form-label">Sale Reference</label>
+                        <input
+                            type="text"
+                            id="reference"
+                            name="reference"
+                            value="{{ $filters['reference'] ?? '' }}"
+                            maxlength="150"
+                            class="form-control"
+                            placeholder="e.g. SALE-00000001"
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="sale_type" class="form-label">Sale Type</label>
+                        <select id="sale_type" name="sale_type" class="form-select">
+                            <option value="">All Sale Types</option>
+                            <option value="walk_in" @selected(($filters['sale_type'] ?? '') === 'walk_in')>Walk-in</option>
+                            <option value="business" @selected(($filters['sale_type'] ?? '') === 'business')>Business Customer</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="customer_id" class="form-label">Business Customer</label>
+                        <select id="customer_id" name="customer_id" class="form-select">
+                            <option value="">All Business Customers</option>
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}" @selected((string) ($filters['customer_id'] ?? '') === (string) $customer->id)>
+                                    {{ $customer->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input
+                            type="date"
+                            id="date_from"
+                            name="date_from"
+                            value="{{ $filters['date_from'] ?? '' }}"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input
+                            type="date"
+                            id="date_to"
+                            name="date_to"
+                            value="{{ $filters['date_to'] ?? '' }}"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="col-md-6 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary">Apply Filters</button>
+                        <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-secondary">Clear Filters</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -53,7 +125,7 @@
                         @empty
                             <tr>
                                 <td colspan="8" class="text-center text-muted py-4">
-                                    No completed V2 sales yet.
+                                    No completed V2 sales match the selected filters.
                                 </td>
                             </tr>
                         @endforelse
