@@ -5,12 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SalesOrder extends Model
 {
     public const TYPE_WALK_IN = 'walk_in';
     public const TYPE_BUSINESS = 'business';
     public const STATUS_DRAFT = 'draft';
+    public const STATUS_COMPLETED = 'completed';
 
     protected $fillable = [
         'customer_id',
@@ -44,5 +46,10 @@ class SalesOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class);
+    }
+
+    public function stockMovements(): MorphMany
+    {
+        return $this->morphMany(StockMovement::class, 'source');
     }
 }
