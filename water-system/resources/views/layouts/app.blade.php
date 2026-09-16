@@ -83,6 +83,13 @@
 
                     </a>
 
+                    <a href="{{ route('sales-orders.create') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        V2 Sales
+
+                    </a>
+
                     <a href="{{ route('products.index') }}"
                        class="text-gray-700 hover:text-blue-500">
 
