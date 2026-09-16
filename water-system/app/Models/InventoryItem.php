@@ -14,6 +14,8 @@ class InventoryItem extends Model
         'category',
         'unit',
         'reorder_level',
+        'retail_price',
+        'wholesale_price',
         'is_sellable',
         'is_active',
     ];
@@ -22,6 +24,8 @@ class InventoryItem extends Model
     {
         return [
             'reorder_level' => 'decimal:3',
+            'retail_price' => 'decimal:2',
+            'wholesale_price' => 'decimal:2',
             'is_sellable' => 'boolean',
             'is_active' => 'boolean',
         ];
