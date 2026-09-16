@@ -7,9 +7,14 @@
             <h2 class="mb-1">New V2 Sale</h2>
             <p class="text-muted mb-0">Start a walk-in or business customer sale. This step creates a draft only; it does not deduct stock yet.</p>
         </div>
-        <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-secondary">
-            Completed Sales History
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('sales-orders.report') }}" class="btn btn-outline-primary">
+                Sales Data Report
+            </a>
+            <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-secondary">
+                Completed Sales History
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
