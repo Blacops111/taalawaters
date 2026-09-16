@@ -114,6 +114,7 @@
                             <th class="text-end">Quantity</th>
                             <th class="text-end">Unit Price</th>
                             <th class="text-end">Line Total</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -124,17 +125,29 @@
                                 <td class="text-end">{{ number_format((float) $item->quantity, 0) }}</td>
                                 <td class="text-end">KES {{ number_format((float) $item->unit_price, 2) }}</td>
                                 <td class="text-end"><strong>KES {{ number_format((float) $item->line_total, 2) }}</strong></td>
+                                <td class="text-end">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('sales-orders.items.destroy', [$salesOrder, $item]) }}"
+                                        class="d-inline"
+                                        onsubmit="return confirm('Remove this product from the draft sale?');"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">No products have been added to this draft yet.</td>
+                                <td colspan="6" class="text-center text-muted py-4">No products have been added to this draft yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     @if($salesOrder->items->isNotEmpty())
                         <tfoot class="table-light">
                             <tr>
-                                <th colspan="4" class="text-end">Draft Total</th>
+                                <th colspan="5" class="text-end">Draft Total</th>
                                 <th class="text-end">KES {{ number_format((float) $salesOrder->total_amount, 2) }}</th>
                             </tr>
                         </tfoot>
