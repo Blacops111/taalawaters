@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductionRecipeController;
 use App\Http\Controllers\ProductionRunController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TruckController;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +90,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])
         ->name('customers.update');
+
+    Route::get('/sales-orders/create', [SalesOrderController::class, 'create'])
+        ->name('sales-orders.create');
+
+    Route::post('/sales-orders', [SalesOrderController::class, 'store'])
+        ->name('sales-orders.store');
 
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');
