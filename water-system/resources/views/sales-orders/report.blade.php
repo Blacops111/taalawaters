@@ -17,6 +17,15 @@
             >
                 Download PDF
             </a>
+            <a
+                href="{{ route('sales-orders.report.excel', [
+                    'date_from' => $filters['date_from'] ?? null,
+                    'date_to' => $filters['date_to'] ?? null,
+                ]) }}"
+                class="btn btn-success"
+            >
+                Download Excel
+            </a>
             <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-primary">Completed Sales History</a>
             <a href="{{ route('sales-orders.create') }}" class="btn btn-outline-secondary">Back to V2 Sales</a>
         </div>
@@ -157,7 +166,7 @@
     </div>
 
     <div class="alert alert-info mt-4 mb-0">
-        PDF export is available. Excel export will be added after the PDF step is verified.
+        PDF and Excel exports use the same completed-sales data and selected date range shown on this report.
     </div>
 </div>
 @endsection
