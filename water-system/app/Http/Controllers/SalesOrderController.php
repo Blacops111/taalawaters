@@ -32,6 +32,22 @@ class SalesOrderController extends Controller
         return view('sales-orders.create', compact('customers', 'recentDrafts'));
     }
 
+    public function history()
+    {
+        $completedSales = SalesOrder::query()
+            ->with([
+                'customer',
+                'creator',
+                'items.inventoryItem',
+            ])
+            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->orderByDesc('sale_at')
+            ->orderByDesc('id')
+            ->paginate(25);
+
+        return view('sales-orders.history', compact('completedSales'));
+    }
+
     public function store(Request $request, SalesOrderDraftService $draftService)
     {
         $validated = $request->validate([
