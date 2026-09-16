@@ -4,7 +4,10 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <h2 class="mb-1">Sale {{ $salesOrder->reference }}</h2>
+            <h2 class="mb-1">
+                {{ $salesOrder->status === \App\Models\SalesOrder::STATUS_REVERSED ? 'Reversed Sale' : 'Completed Sale' }}
+                {{ $salesOrder->reference }}
+            </h2>
             <p class="text-muted mb-0">Read-only sale record with inventory and reversal audit history.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end">
