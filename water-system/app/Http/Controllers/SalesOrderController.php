@@ -9,6 +9,7 @@ use App\Models\SalesOrderItem;
 use App\Services\SalesOrderCompletionService;
 use App\Services\SalesOrderDraftItemService;
 use App\Services\SalesOrderDraftService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -94,74 +95,20 @@ class SalesOrderController extends Controller
 
     public function report(Request $request)
     {
-        $filters = $request->validate([
-            'date_from' => ['nullable', 'date'],
-            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-        ]);
+        $filters = $this->validateReportFilters($request);
 
-        $dateFrom = $filters['date_from'] ?? null;
-        $dateTo = $filters['date_to'] ?? null;
+        return view('sales-orders.report', $this->salesReportData($filters));
+    }
 
-        $salesQuery = SalesOrder::query()
-            ->where('status', SalesOrder::STATUS_COMPLETED)
-            ->when(
-                filled($dateFrom),
-                fn ($query) => $query->whereDate('sale_at', '>=', $dateFrom)
-            )
-            ->when(
-                filled($dateTo),
-                fn ($query) => $query->whereDate('sale_at', '<=', $dateTo)
-            );
+    public function reportPdf(Request $request)
+    {
+        $filters = $this->validateReportFilters($request);
+        $data = $this->salesReportData($filters);
 
-        $summary = (clone $salesQuery)
-            ->selectRaw(
-                'COUNT(*) as completed_sales_count,
-                 COALESCE(SUM(total_amount), 0) as total_sales_value,
-                 COALESCE(SUM(CASE WHEN sale_type = ? THEN total_amount ELSE 0 END), 0) as walk_in_total,
-                 COALESCE(SUM(CASE WHEN sale_type = ? THEN total_amount ELSE 0 END), 0) as business_total',
-                [SalesOrder::TYPE_WALK_IN, SalesOrder::TYPE_BUSINESS]
-            )
-            ->first();
+        $pdf = Pdf::loadView('sales-orders.report-pdf', $data)
+            ->setPaper('a4', 'portrait');
 
-        $itemQuery = SalesOrderItem::query()
-            ->join('sales_orders', 'sales_order_items.sales_order_id', '=', 'sales_orders.id')
-            ->where('sales_orders.status', SalesOrder::STATUS_COMPLETED)
-            ->when(
-                filled($dateFrom),
-                fn ($query) => $query->whereDate('sales_orders.sale_at', '>=', $dateFrom)
-            )
-            ->when(
-                filled($dateTo),
-                fn ($query) => $query->whereDate('sales_orders.sale_at', '<=', $dateTo)
-            );
-
-        $totalUnitsSold = (float) (clone $itemQuery)
-            ->sum('sales_order_items.quantity');
-
-        $productBreakdown = (clone $itemQuery)
-            ->join('inventory_items', 'sales_order_items.inventory_item_id', '=', 'inventory_items.id')
-            ->select([
-                'inventory_items.id',
-                'inventory_items.sku',
-                'inventory_items.name',
-            ])
-            ->selectRaw('SUM(sales_order_items.quantity) as units_sold')
-            ->selectRaw('SUM(sales_order_items.line_total) as sales_value')
-            ->groupBy(
-                'inventory_items.id',
-                'inventory_items.sku',
-                'inventory_items.name'
-            )
-            ->orderByDesc('sales_value')
-            ->orderBy('inventory_items.name')
-            ->get();
-
-        return view('sales-orders.report', compact(
-            'filters',
-            'summary',
-            'totalUnitsSold',
-            'productBreakdown'
-        ));
+        return $pdf->download('taala_v2_sales_report.pdf');
     }
 
     public function show(SalesOrder $salesOrder)
@@ -288,5 +235,80 @@ class SalesOrderController extends Controller
                 'success',
                 'Sale '.$completedOrder->reference.' was completed successfully and inventory was deducted.'
             );
+    }
+
+    private function validateReportFilters(Request $request): array
+    {
+        return $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+    }
+
+    private function salesReportData(array $filters): array
+    {
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
+
+        $salesQuery = SalesOrder::query()
+            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->when(
+                filled($dateFrom),
+                fn ($query) => $query->whereDate('sale_at', '>=', $dateFrom)
+            )
+            ->when(
+                filled($dateTo),
+                fn ($query) => $query->whereDate('sale_at', '<=', $dateTo)
+            );
+
+        $summary = (clone $salesQuery)
+            ->selectRaw(
+                'COUNT(*) as completed_sales_count,
+                 COALESCE(SUM(total_amount), 0) as total_sales_value,
+                 COALESCE(SUM(CASE WHEN sale_type = ? THEN total_amount ELSE 0 END), 0) as walk_in_total,
+                 COALESCE(SUM(CASE WHEN sale_type = ? THEN total_amount ELSE 0 END), 0) as business_total',
+                [SalesOrder::TYPE_WALK_IN, SalesOrder::TYPE_BUSINESS]
+            )
+            ->first();
+
+        $itemQuery = SalesOrderItem::query()
+            ->join('sales_orders', 'sales_order_items.sales_order_id', '=', 'sales_orders.id')
+            ->where('sales_orders.status', SalesOrder::STATUS_COMPLETED)
+            ->when(
+                filled($dateFrom),
+                fn ($query) => $query->whereDate('sales_orders.sale_at', '>=', $dateFrom)
+            )
+            ->when(
+                filled($dateTo),
+                fn ($query) => $query->whereDate('sales_orders.sale_at', '<=', $dateTo)
+            );
+
+        $totalUnitsSold = (float) (clone $itemQuery)
+            ->sum('sales_order_items.quantity');
+
+        $productBreakdown = (clone $itemQuery)
+            ->join('inventory_items', 'sales_order_items.inventory_item_id', '=', 'inventory_items.id')
+            ->select([
+                'inventory_items.id',
+                'inventory_items.sku',
+                'inventory_items.name',
+            ])
+            ->selectRaw('SUM(sales_order_items.quantity) as units_sold')
+            ->selectRaw('SUM(sales_order_items.line_total) as sales_value')
+            ->groupBy(
+                'inventory_items.id',
+                'inventory_items.sku',
+                'inventory_items.name'
+            )
+            ->orderByDesc('sales_value')
+            ->orderBy('inventory_items.name')
+            ->get();
+
+        return compact(
+            'filters',
+            'summary',
+            'totalUnitsSold',
+            'productBreakdown'
+        );
     }
 }
