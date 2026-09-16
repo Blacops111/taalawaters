@@ -1,12 +1,12 @@
 # Taala Water System
 
-Taala Water System is a Laravel-based business management system for Taala's bottled and bulk water operations. The project is being rebuilt incrementally on the `taala-v2-development` branch so that each module can be tested and stabilized before the next one is added.
+Taala Water System is a Laravel-based business management system for Taala's bottled and bulk water operations. V2 is being rebuilt incrementally on the `taala-v2-development` branch so each module is tested and stabilized before the next one is added.
 
-> **Current development status:** Phase 2 (Inventory & SKU Foundation) is functionally complete and tested. Phase 3 (Production Management) has started with the production recipe database foundation. The latest production migration received a MySQL index-name compatibility fix and still needs local verification after pulling that fix.
+> **Current development status:** Phase 2 (Inventory & SKU Foundation) and Phase 3 (Production Management) are functionally complete and locally verified. The next planned module is Phase 4 (Sales & Customers).
 
 ## Project goals
 
-The system is intended to connect the full Taala operational flow:
+The target operational flow is:
 
 ```text
 Borehole / Purchases
@@ -17,14 +17,14 @@ Production
         ↓
 Finished Product Inventory
         ↓
-Sales
+Sales & Customers
         ↓
 Delivery
         ↓
 Accounting & Reports
 ```
 
-The long-term goal is to automate routine work as much as practical, keep an audit trail of stock changes, reduce manual stock manipulation, and provide reliable business reporting.
+The system is designed to automate routine work where practical, preserve an audit trail, reduce direct stock manipulation, and support reliable business reporting.
 
 ## Technology stack
 
@@ -57,13 +57,7 @@ taala-v2-development
 
 The stable `main` branch should not be used for experimental V2 work.
 
-## Current project status
-
-### Phase 1 — Requirements & Architecture
-
-Status: **Mostly complete**
-
-The main business flow and module roadmap have been agreed:
+## Roadmap
 
 1. Requirements & Architecture
 2. Inventory & SKU Foundation
@@ -76,21 +70,24 @@ The main business flow and module roadmap have been agreed:
 9. Security Hardening
 10. Performance / Testing / Deployment
 
+## Phase 1 — Requirements & Architecture
+
+Status: **Mostly complete**
+
 Important architecture decisions already made:
 
-- Inventory balances are derived from stock movements rather than manually edited totals.
-- Borehole raw water is intended to be meter-driven, not manually entered during normal operation.
-- Finished products will be created through Production rather than normal stock receiving.
-- Manual adjustments must be auditable.
-- Existing legacy modules remain in place during the V2 transition instead of being destroyed prematurely.
+- Inventory balances are derived from `stock_movements`; they are not directly overwritten.
+- Borehole raw water is meter-driven during normal operation.
+- Finished products are created through Production rather than normal receiving.
+- Manual adjustments and reversals must remain auditable.
+- Existing legacy modules remain available during the V2 transition until their replacements are proven.
+- Critical stock-changing workflows use validation, transactions and row locking.
 
-### Phase 2 — Inventory & SKU Foundation
+## Phase 2 — Inventory & SKU Foundation
 
 Status: **Functionally complete and tested**
 
-#### Inventory master SKUs
-
-The V2 inventory catalog currently contains the following master items:
+### Inventory master SKUs
 
 | SKU | Item | Category |
 |---|---|---|
@@ -111,13 +108,11 @@ The V2 inventory catalog currently contains the following master items:
 | `FW-10L` | Finished Water 10 Litre | Finished product |
 | `FW-20L` | Finished Water 20 Litre | Finished product |
 
-Caps, seals and outer packaging are intentionally generic for now because Taala has not yet confirmed whether they vary by bottle size.
+Caps, seals and outer packaging remain generic until Taala confirms whether they vary by bottle size.
 
-#### Stock movement ledger
+### Stock movement ledger
 
-Inventory balances come from the signed sum of records in `stock_movements`.
-
-Example:
+Inventory balances are the signed sum of stock movements.
 
 ```text
 Opening Balance     +1000
@@ -127,76 +122,27 @@ Stock Received       +500
 Live Balance         1475
 ```
 
-This makes inventory changes traceable and avoids directly overwriting a stock total.
+This keeps inventory traceable and avoids silently changing a stored total.
 
-#### Inventory page
+### Inventory capabilities
 
-The V2 Inventory page shows:
+The V2 Inventory module includes:
 
-- SKU
-- item name
-- category
-- unit
-- live stock balance
-- reorder level
-- stock status
+- live SKU balances
+- opening balances
+- stock receiving
+- movement history and filtering
+- reorder levels
+- low-stock detection
+- manual damage / wastage / correction adjustments
+- validation preventing stock decreases below the current balance
+- audit information for user, reference, date and notes
 
-Balances are calculated using database aggregation rather than one query per inventory item.
-
-#### Opening balances and stock receiving
-
-Admins can record:
-
-- Opening Balance
-- Stock Received
-
-Safeguards include:
-
-- Raw borehole water cannot be manually received through this form.
-- Finished products cannot be normally received as purchased stock; they must eventually come from Production.
-- An inventory item can only have one opening balance.
-- Normal stock receipts require a reference.
-- Duplicate stock-receipt references for the same item are rejected.
-
-#### Stock movement history
-
-The Movement History page provides an audit trail containing:
-
-- date/time
-- SKU
-- inventory item
-- movement type
-- signed quantity change
-- reference
-- user/system source
-- notes
-
-The history can be filtered by inventory item, movement type and date range.
-
-#### Reorder levels and low-stock detection
-
-Admins can define reorder levels for inventory items.
-
-The system automatically identifies items whose live stock balance is at or below the configured reorder level.
-
-Raw borehole water is excluded from purchasing reorder logic because it is meter-managed.
-
-#### Stock adjustments
-
-Manual inventory adjustments are supported for:
-
-- damage / breakage
-- wastage
-- stock count correction increase
-- stock count correction decrease
-
-Every adjustment records the responsible user, date/time, quantity, optional reference and a required reason/notes field.
-
-A stock decrease cannot remove more stock than the current live balance.
+Raw borehole water cannot be manually received or adjusted during normal operation, and finished products are not received as ordinary purchased stock.
 
 ### Automated borehole water inventory
 
-Status: **Software foundation complete and tested; physical meter connection pending**
+Status: **Software foundation complete and locally verified; physical meter integration pending**
 
 The intended flow is:
 
@@ -216,73 +162,81 @@ Stock Movement
 RAW-WATER live balance
 ```
 
-The software foundation includes:
+The software foundation includes secure meter registration, UUID meter IDs, hashed tokens, baseline readings, idempotency protection, litre normalization, positive-delta calculation, anomaly review, locking and automatic raw-water stock movements.
 
-- secure meter registration
-- UUID public meter IDs
-- hashed meter authentication tokens
-- reading history
-- unit normalization to litres
-- baseline readings
-- automatic positive delta calculation
-- idempotency protection
-- anomaly review for backwards/invalid readings
-- optional maximum-flow sanity checks
-- database locking during ingestion
-- automatic raw-water stock movements
+A local simulated meter was used to verify that a baseline reading creates no stock and that a later cumulative increase automatically adds the matching litre delta to `RAW-WATER`.
 
-Supported reading units currently include litres and cubic metres.
+The production hardware connection still depends on the real meter model and interface. Possible interfaces include HTTP/HTTPS, Modbus TCP, RS485/Modbus RTU, pulse output, MQTT or a PLC/IoT gateway.
 
-The live hardware integration cannot be finalized until the exact meter model/interface is known. Possible interfaces include:
+## Phase 3 — Production Management
 
-- HTTP/HTTPS
-- Modbus TCP
-- Modbus RTU / RS485
-- pulse output
-- MQTT
-- PLC / IoT gateway integration
+Status: **Functionally complete and tested**
 
-A purely mechanical meter with no electronic output would require an external sensor/gateway or a compatible digital flow meter.
+### Phase 3A — Production recipe foundation
 
-### Phase 3 — Production Management
+Production recipes link each finished-water SKU to the materials required to produce it.
 
-Status: **Started**
-
-#### Phase 3A — Production recipe foundation
-
-The production recipe data model has been added so each finished-water SKU can be linked to the materials required to produce it.
-
-New production tables:
+Main tables:
 
 ```text
 production_recipes
 production_recipe_components
 ```
 
-The design supports a structure such as:
+The recipe foundation is migrated and verified on MySQL. The shortened composite index name `prod_recipe_component_unique` avoids MySQL's identifier-length limit.
 
-```text
-Finished Water 500 ml
-    ├── Raw Water
-    ├── Empty Bottle 500 ml
-    ├── Cap
-    ├── Label 500 ml
-    └── Seal
-```
+### Phase 3B — Production recipe setup
 
-The actual Taala recipe quantities have deliberately **not** been invented yet. They must be confirmed before automatic production deductions are enabled.
+An admin interface allows the real materials and quantities for each finished product to be configured.
 
-The production migration originally hit MySQL's identifier-length limit because Laravel generated an overly long composite unique-index name. It has now been changed to the shorter explicit index name:
+The four finished-water recipes have been configured locally:
 
-```text
-prod_recipe_component_unique
-```
+- `FW-500ML`
+- `FW-1L`
+- `FW-10L`
+- `FW-20L`
 
-Local migration/test verification should be completed after pulling the latest branch update.
+Each configured recipe uses the inventory ledger items rather than a separate stock source.
+
+### Phase 3C — Production runs
+
+Production runs now:
+
+- accept whole finished units only
+- validate the recipe and finished product
+- check every required component before changing stock
+- calculate component usage from the configured recipe
+- block the entire run when any component is insufficient
+- deduct raw water and packaging materials atomically
+- add finished product stock atomically
+- create a unique `PROD-########` reference
+- keep all input/output movements linked to the production run
+
+Whole-unit validation exists both in the HTTP form and in the production service, so fractional finished bottles cannot be created by bypassing the UI.
+
+The local production workflow was verified end-to-end using meter-created raw-water inventory.
+
+### Phase 3D — Production run reversal
+
+Incorrect completed production runs can be reversed without deleting history.
+
+A reversal:
+
+- requires a reason
+- uses the original production movements rather than recalculating from the current recipe
+- restores the exact consumed components
+- removes the exact finished-product output
+- blocks a second reversal of the same run
+- blocks reversal when insufficient finished stock remains to remove the original output safely
+- records linked reversal stock movements
+- marks the original run as `reversed`
+- creates a `REV-PROD-########` reference
+
+This workflow was manually verified by reversing the earlier fractional test run `PROD-00000001` as `REV-PROD-00000001`.
 
 ## Existing legacy modules
 
-The original Taala system already contains working or partially working modules that remain available while V2 is developed.
+The original Taala system still contains working or partially working modules while V2 replacements are developed.
 
 ### Authentication and admin access
 
@@ -293,72 +247,35 @@ The original Taala system already contains working or partially working modules 
 
 ### Products
 
-Existing product CRUD supports:
-
-- create
-- list
-- edit
-- delete
-- selling price
-- cost price
+Legacy product CRUD supports create, list, edit, delete, selling price and cost price.
 
 ### Legacy stocks
 
-The original `stocks` module still exists. V2 inventory is being built around `inventory_items` and `stock_movements`, so the old stock module is not yet being removed.
+The original `stocks` module remains in place. V2 inventory uses `inventory_items` and `stock_movements`, so the legacy stock module should not be used as the V2 ledger source of truth.
 
-### Sales
+### Legacy sales
 
-Existing sales functionality includes:
+Existing sales functionality includes sales entry, product selection, quantity, sale price, total amount, sale date, stock deduction, PDF export and Excel export.
 
-- sales entry
-- product selection
-- quantity sold
-- sale price
-- total amount
-- sale date
-- stock deduction stabilization
-- PDF export
-- Excel export
-
-Sales transactions use database transactions and stock locking to reduce inconsistent deductions.
+Phase 4 will replace/bridge this carefully so V2 sales deduct finished-product inventory from the V2 stock ledger instead of creating a second competing stock system.
 
 ### Dashboard
 
-The dashboard currently includes cards and charts for:
+The legacy dashboard currently includes product, stock, sales, revenue, profit, sales-over-time, product-distribution, stock-level and low-stock views.
 
-- products
-- stock
-- sales
-- revenue
-- profit
-- sales over time
-- product sales distribution
-- stock levels
-- monthly profit
-- low-stock information
-
-### Profit calculation
-
-Current profit reporting uses:
+Current legacy profit uses:
 
 ```text
 (sale price - current product cost price) × quantity sold
 ```
 
-This is acceptable for the current legacy module but is not yet a historical costing system. Future accounting/production work should preserve the cost basis that applied at the time of sale or production.
+This is not yet historical costing and will be revisited during later accounting work.
 
 ### Trucks / logistics
 
-A starter Truck module exists from the original system, but the future V2 logistics design is expected to use a more flexible vehicle structure so Taala can support both:
+A starter Truck module exists, but future V2 logistics will use a more flexible vehicle structure supporting motorbikes and tanker trucks.
 
-- motorbikes for bottled-water deliveries
-- tanker trucks for bulk-water deliveries
-
-Drivers, delivery notes and delivery logs are planned later.
-
-## Database areas currently introduced by V2
-
-The V2 foundation currently includes these main tables:
+## V2 database areas introduced so far
 
 ```text
 inventory_items
@@ -367,127 +284,66 @@ water_meters
 water_meter_readings
 production_recipes
 production_recipe_components
+production_runs
+production_run_reversals
 ```
 
 ### `inventory_items`
 
-Stores the inventory/SKU master catalog.
-
-Important fields include:
-
-- SKU
-- name
-- category
-- unit
-- reorder level
-- sellable flag
-- active flag
+Stores the SKU master catalog, including SKU, name, category, unit, reorder level, sellable flag and active flag.
 
 ### `stock_movements`
 
-Stores every signed stock change.
+Stores every signed inventory change, including movement type, quantity delta, source linkage, user, occurrence time, reference and notes.
 
-Important fields include:
+### `water_meters` / `water_meter_readings`
 
-- inventory item
-- movement type
-- quantity delta
-- source type / source ID
-- user who created it
-- occurrence time
-- reference
-- notes
+Store meter configuration and normalized cumulative reading history used to create automated raw-water stock movements.
 
-### `water_meters`
+### `production_recipes` / `production_recipe_components`
 
-Stores registered borehole meter devices and their secure configuration.
+Store finished-product recipes and their component requirements.
 
-### `water_meter_readings`
+### `production_runs`
 
-Stores meter readings, normalized litre values, computed deltas and review status.
+Stores completed/reversed production transactions and their audit metadata.
 
-### `production_recipes`
+### `production_run_reversals`
 
-Stores one production recipe for a finished inventory product.
-
-### `production_recipe_components`
-
-Stores the input inventory items and quantities required by a recipe.
+Stores safe reversals of completed production runs and links the correcting movements back to the original run.
 
 ## Installation / local setup
-
-Clone the repository and switch to the V2 branch:
 
 ```bash
 git clone https://github.com/Blacops111/taalawaters.git
 cd taalawaters
 git checkout taala-v2-development
 cd water-system
-```
-
-Install PHP dependencies:
-
-```bash
 composer install
-```
-
-Create the environment file if needed:
-
-```bash
 cp .env.example .env
 php artisan key:generate
-```
-
-Configure MySQL in `.env`.
-
-Example keys:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=water_system
-DB_USERNAME=your_mysql_user
-DB_PASSWORD=your_mysql_password
-```
-
-Do not commit `.env` or real credentials.
-
-Install frontend dependencies:
-
-```bash
 npm install
-```
-
-Run migrations:
-
-```bash
 php artisan migrate
 ```
 
-Seed only the V2 inventory master catalog when required:
+Configure MySQL in `.env` and keep real credentials out of source control.
+
+Seed the V2 inventory master only when required:
 
 ```bash
 php artisan db:seed --class=InventoryItemSeeder
 ```
 
-Do **not** use the general database seeder blindly on an existing environment, because `DatabaseSeeder` may create test data.
+Do not run the general database seeder blindly on an existing environment because it may create test data.
 
-Start the Laravel development server:
+Start development services with:
 
 ```bash
 php artisan serve
-```
-
-For frontend development:
-
-```bash
 npm run dev
 ```
 
-## Tests completed during V2 development
-
-Focused tests have been added for the work completed so far.
+## Focused tests used during V2 development
 
 ```bash
 php artisan test --filter=WaterMeterReadingTest
@@ -498,13 +354,19 @@ php artisan test --filter=InventoryMovementHistoryTest
 php artisan test --filter=InventoryLowStockTest
 php artisan test --filter=InventoryAdjustmentTest
 php artisan test --filter=ProductionRecipeFoundationTest
+php artisan test --filter=ProductionRecipeSetupTest
+php artisan test --filter=ProductionRun
+php artisan test --filter=ProductionRunReversal
+php artisan test --filter=ProductionRunReversalController
 ```
 
-The inventory and borehole tests above have been confirmed locally during development.
+Recent verified production results include:
 
-The Production Recipe Foundation test should be rerun after the latest MySQL migration compatibility fix is pulled and migrated successfully.
+- `ProductionRun` tests: **8 passed / 49 assertions**
+- `ProductionRunReversal` service tests: **5 passed / 26 assertions**
+- `ProductionRunReversalController` tests: **3 passed / 26 assertions**
 
-To run the complete test suite:
+To run the complete suite:
 
 ```bash
 php artisan test
@@ -512,21 +374,17 @@ php artisan test
 
 ## Borehole meter registration
 
-A meter can be registered using:
+Register a meter with:
 
 ```bash
 php artisan taala:register-water-meter
 ```
 
-Available options include meter name, serial number, protocol, unit and maximum flow.
+The registration command displays the plaintext meter token once and stores only its SHA-256 hash. Treat the displayed token as a secret and do not commit or share it.
 
-Do not register the real production meter until its hardware communication method and reading unit have been confirmed.
-
-The registration command displays the meter token once. The system stores only its SHA-256 hash, so the plaintext token must be stored securely outside the database.
+Do not register/configure the real production meter until its communication method, unit and flow characteristics are known.
 
 ## Security principles
-
-Security is being treated as a core project requirement.
 
 Current and planned controls include:
 
@@ -537,83 +395,58 @@ Current and planned controls include:
 - Eloquent / query builder instead of unsafe SQL concatenation
 - password hashing
 - restricted admin routes
-- database transactions for critical stock operations
-- row locking where concurrent inventory changes could conflict
-- rate limiting on the water-meter API
+- transactions for critical stock operations
+- row locking around concurrent inventory changes
+- meter API rate limiting
 - hashed meter tokens
-- idempotency protection for meter readings
-- audit trails for inventory changes
-- safe upload handling when file modules are added
+- meter-reading idempotency protection
+- append-only inventory audit trails
+- safe reversal workflows instead of destructive edits
 - production `APP_DEBUG=false`
 - environment-based secrets
 - backups and recovery planning
 
-No software system can be guaranteed to be literally unhackable. The goal is to reduce attack surface, follow secure defaults and test important authorization/data-integrity paths before deployment.
+No software can be guaranteed to be literally unhackable. The goal is to minimize attack surface, use secure defaults and test important authorization/data-integrity paths before deployment.
 
 ## Performance principles
 
-The project should remain efficient as data volume grows.
-
-Current/planned practices include:
-
-- indexed foreign keys and frequently queried fields
-- pagination
-- aggregate SQL queries for stock balances
-- eager loading where appropriate
-- avoiding N+1 queries
-- efficient dashboard queries
-- queues for heavy reports/exports when needed
-- caching only where justified
-- avoiding unnecessary polling
-- load/performance testing before production deployment
+Current/planned practices include indexed foreign keys and common filters, pagination, aggregate SQL for stock balances, eager loading, avoiding N+1 queries, efficient dashboard queries, queued heavy exports where useful, justified caching, avoiding unnecessary polling, and load testing before deployment.
 
 ## Development rules
 
-When extending Taala V2:
-
 - Make small, focused changes.
-- Inspect existing models, migrations, routes and controllers before modifying schema or behavior.
-- Do not invent business rules when Taala has not confirmed them.
-- Preserve existing working data.
-- Do not directly overwrite inventory balances; use stock movements.
+- Inspect existing models, migrations, routes and controllers before modifying behavior.
+- Do not invent business rules that Taala has not confirmed.
+- Preserve working data and audit history.
+- Do not directly overwrite inventory balances; create stock movements.
 - Do not manually enter routine borehole raw-water quantities.
 - Do not bypass authentication, authorization, CSRF or validation to make a feature work.
 - Keep secrets out of source control.
 - Avoid unrelated refactors while adding a feature.
-- Add focused tests for important stock, financial and authorization behavior.
+- Add focused tests for stock, financial and authorization behavior.
 - Fix errors before moving to the next module.
 
-## Next planned work
+## Next planned work — Phase 4: Sales & Customers
 
-The immediate next step after verifying the production recipe migration is:
+Phase 4 will be built incrementally rather than replacing the legacy sales module in one large change.
 
-### Phase 3B — Production Recipe Setup
+The first planned step is **Phase 4A — Sales foundation**, beginning with the V2 sales/customer data model and clear rules for how a sale deducts finished-product inventory.
 
-This will provide an admin interface to configure the actual materials and quantities required for each finished product.
+Key principles for Phase 4:
 
-After recipes are confirmed, later production steps will cover:
+- only sell active sellable finished inventory items
+- server-side authoritative prices and totals
+- prevent sales that exceed available finished stock
+- use stock movements as the inventory source of truth
+- preserve sale price/cost information needed for later historical reporting
+- keep customer support flexible for walk-in and named customers
+- make sale corrections/reversals auditable rather than deleting financial history
+- keep the legacy sales module isolated until the V2 flow is proven
 
-```text
-Start production batch
-        ↓
-Validate material availability
-        ↓
-Consume raw water / bottles / caps / labels / seals
-        ↓
-Create finished-product stock
-        ↓
-Record full movement history
-```
+Later Phase 4 work will cover customer management, sales entry, receipts/invoices, sales history, reports and controlled sale reversal/correction.
 
-Production deductions will only be enabled after the real Taala recipe rules have been confirmed.
+## Future roadmap after Sales
 
-## Future roadmap
-
-Planned work after Production includes:
-
-- customer management
-- improved sales flow
-- automatic selling-price selection
 - purchasing / purchase requests
 - supplier management
 - delivery notes
@@ -623,7 +456,7 @@ Planned work after Production includes:
 - accounting integration
 - trial balance
 - balance sheet
-- richer reports
+- richer dashboard/reports
 - expanded role permissions
 - security hardening
 - performance testing
@@ -632,4 +465,4 @@ Planned work after Production includes:
 
 ## Project status note
 
-This README reflects the project state on the `taala-v2-development` branch as of **15 September 2026**. It should be updated as each phase is completed and verified.
+This README reflects the `taala-v2-development` branch status as of **16 September 2026**. Phase 2 and Phase 3 are verified milestones; Phase 4 is next.
