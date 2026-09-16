@@ -101,6 +101,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/sales-orders/history', [SalesOrderController::class, 'history'])
         ->name('sales-orders.history');
 
+    Route::get('/sales-orders/report', [SalesOrderController::class, 'report'])
+        ->name('sales-orders.report');
+
     Route::get('/sales-orders/create', [SalesOrderController::class, 'create'])
         ->name('sales-orders.create');
 
