@@ -14,7 +14,6 @@ class SalesOrderDraftItemService
         SalesOrder $salesOrder,
         InventoryItem $inventoryItem,
         int $quantity,
-        string|int|float $unitPrice,
     ): SalesOrderItem {
         if ($quantity < 1) {
             throw ValidationException::withMessages([
@@ -22,15 +21,7 @@ class SalesOrderDraftItemService
             ]);
         }
 
-        $unitPriceCents = (int) round(((float) $unitPrice) * 100);
-
-        if ($unitPriceCents < 0) {
-            throw ValidationException::withMessages([
-                'unit_price' => 'Unit price cannot be negative.',
-            ]);
-        }
-
-        return DB::transaction(function () use ($salesOrder, $inventoryItem, $quantity, $unitPriceCents) {
+        return DB::transaction(function () use ($salesOrder, $inventoryItem, $quantity) {
             $lockedOrder = SalesOrder::query()
                 ->lockForUpdate()
                 ->findOrFail($salesOrder->id);
@@ -52,6 +43,30 @@ class SalesOrderDraftItemService
             ) {
                 throw ValidationException::withMessages([
                     'inventory_item_id' => 'Only active sellable finished products can be added to a sale.',
+                ]);
+            }
+
+            $priceColumn = $lockedOrder->sale_type === SalesOrder::TYPE_BUSINESS
+                ? 'wholesale_price'
+                : 'retail_price';
+
+            $priceLabel = $lockedOrder->sale_type === SalesOrder::TYPE_BUSINESS
+                ? 'wholesale'
+                : 'retail';
+
+            $configuredPrice = $lockedItem->{$priceColumn};
+
+            if ($configuredPrice === null) {
+                throw ValidationException::withMessages([
+                    'inventory_item_id' => 'The '.$priceLabel.' price for '.$lockedItem->name.' has not been configured yet.',
+                ]);
+            }
+
+            $unitPriceCents = (int) round(((float) $configuredPrice) * 100);
+
+            if ($unitPriceCents < 0) {
+                throw ValidationException::withMessages([
+                    'inventory_item_id' => 'The configured sales price is invalid.',
                 ]);
             }
 
