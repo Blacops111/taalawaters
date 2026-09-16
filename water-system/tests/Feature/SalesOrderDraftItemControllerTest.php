@@ -31,12 +31,15 @@ class SalesOrderDraftItemControllerTest extends TestCase
             'category' => 'raw_water',
             'is_sellable' => false,
             'is_active' => true,
+            'retail_price' => null,
+            'wholesale_price' => null,
         ]);
 
         $this->actingAs($admin)
             ->get(route('sales-orders.edit', $order))
             ->assertOk()
             ->assertSee('Sales Draft #'.$order->id)
+            ->assertSee('Retail Price')
             ->assertSee($finishedProduct->name)
             ->assertDontSee($rawMaterial->name);
     }
@@ -51,7 +54,6 @@ class SalesOrderDraftItemControllerTest extends TestCase
             ->post(route('sales-orders.items.store', $order), [
                 'inventory_item_id' => $finishedProduct->id,
                 'quantity' => 12,
-                'unit_price' => 50,
             ])
             ->assertRedirect(route('sales-orders.edit', $order))
             ->assertSessionHas('success');
@@ -77,6 +79,8 @@ class SalesOrderDraftItemControllerTest extends TestCase
             'name' => 'Raw Sale Blocked',
             'category' => 'raw_water',
             'is_sellable' => false,
+            'retail_price' => null,
+            'wholesale_price' => null,
         ]);
 
         $this->actingAs($admin)
@@ -84,7 +88,6 @@ class SalesOrderDraftItemControllerTest extends TestCase
             ->post(route('sales-orders.items.store', $order), [
                 'inventory_item_id' => $rawMaterial->id,
                 'quantity' => 1,
-                'unit_price' => 50,
             ])
             ->assertRedirect(route('sales-orders.edit', $order))
             ->assertSessionHasErrors('inventory_item_id');
@@ -104,7 +107,6 @@ class SalesOrderDraftItemControllerTest extends TestCase
             ->post(route('sales-orders.items.store', $order), [
                 'inventory_item_id' => $finishedProduct->id,
                 'quantity' => 0.5,
-                'unit_price' => 50,
             ])
             ->assertRedirect(route('sales-orders.edit', $order))
             ->assertSessionHasErrors('quantity');
@@ -133,6 +135,8 @@ class SalesOrderDraftItemControllerTest extends TestCase
             'category' => 'finished_product',
             'unit' => 'unit',
             'reorder_level' => 0,
+            'retail_price' => 50,
+            'wholesale_price' => 40,
             'is_sellable' => true,
             'is_active' => true,
         ], $overrides));
