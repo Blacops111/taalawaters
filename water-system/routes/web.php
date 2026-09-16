@@ -59,6 +59,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/production/runs', [ProductionRunController::class, 'store'])
         ->name('production.runs.store');
 
+    Route::get('/production/runs/{productionRun}/reversal', [ProductionRunController::class, 'reversal'])
+        ->name('production.runs.reversal');
+
+    Route::post('/production/runs/{productionRun}/reversal', [ProductionRunController::class, 'reverse'])
+        ->name('production.runs.reverse');
+
     Route::get('/production/recipes', [ProductionRecipeController::class, 'index'])
         ->name('production.recipes.index');
 
