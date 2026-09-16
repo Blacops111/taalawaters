@@ -98,6 +98,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])
         ->name('customers.update');
 
+    Route::get('/sales-orders/history', [SalesOrderController::class, 'history'])
+        ->name('sales-orders.history');
+
     Route::get('/sales-orders/create', [SalesOrderController::class, 'create'])
         ->name('sales-orders.create');
 
