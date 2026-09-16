@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\SalesOrder;
+use App\Services\SalesOrderCompletionService;
 use App\Services\SalesOrderDraftItemService;
 use App\Services\SalesOrderDraftService;
 use Carbon\Carbon;
@@ -108,5 +109,23 @@ class SalesOrderController extends Controller
         return redirect()
             ->route('sales-orders.edit', $salesOrder)
             ->with('success', 'Product was added to draft sales order #'.$salesOrder->id.' using the configured sales price.');
+    }
+
+    public function complete(
+        Request $request,
+        SalesOrder $salesOrder,
+        SalesOrderCompletionService $completionService,
+    ) {
+        $completedOrder = $completionService->complete(
+            $salesOrder,
+            $request->user(),
+        );
+
+        return redirect()
+            ->route('sales-orders.create')
+            ->with(
+                'success',
+                'Sale '.$completedOrder->reference.' was completed successfully and inventory was deducted.'
+            );
     }
 }
