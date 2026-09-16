@@ -8,6 +8,9 @@
             <p class="text-muted mb-0">Live balances calculated from stock movements.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a href="{{ route('inventory.pricing.index') }}" class="btn btn-outline-primary">
+                Sales Pricing
+            </a>
             <a href="{{ route('inventory.low-stock') }}"
                class="btn {{ $lowStockCount > 0 ? 'btn-danger' : 'btn-outline-success' }}">
                 Low Stock ({{ $lowStockCount }})
