@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h2 class="mb-1">Sales Draft #{{ $salesOrder->id }}</h2>
-            <p class="text-muted mb-0">Add finished-water products to this draft. Stock is not deducted at this stage.</p>
+            <p class="text-muted mb-0">Add finished-water products to this draft. Stock is deducted only when the sale is completed.</p>
         </div>
         <a href="{{ route('sales-orders.create') }}" class="btn btn-outline-secondary">Back to V2 Sales</a>
     </div>
@@ -144,8 +144,30 @@
         </div>
     </div>
 
-    <div class="alert alert-info mt-4 mb-0">
-        Prices are controlled by the admin sales-pricing setup. This is still a draft, so inventory is not reduced yet.
-    </div>
+    @if($salesOrder->items->isNotEmpty())
+        <div class="card border-danger mt-4">
+            <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                <div>
+                    <strong>Ready to complete this sale?</strong>
+                    <div class="text-muted small">
+                        Completing the sale will permanently deduct the sold quantities from live inventory.
+                    </div>
+                </div>
+
+                <form method="POST"
+                      action="{{ route('sales-orders.complete', $salesOrder) }}"
+                      onsubmit="return confirm('Complete this sale and deduct the sold stock from inventory?');">
+                    @csrf
+                    <button type="submit" class="btn btn-danger">
+                        Complete Sale & Deduct Stock
+                    </button>
+                </form>
+            </div>
+        </div>
+    @else
+        <div class="alert alert-info mt-4 mb-0">
+            Add at least one finished product before the sale can be completed.
+        </div>
+    @endif
 </div>
 @endsection
