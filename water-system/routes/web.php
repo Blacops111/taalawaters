@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductionRunController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\SalesPricingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TruckController;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
+
+    Route::get('/inventory/pricing', [SalesPricingController::class, 'index'])
+        ->name('inventory.pricing.index');
+
+    Route::patch('/inventory/{inventoryItem}/pricing', [SalesPricingController::class, 'update'])
+        ->name('inventory.pricing.update');
 
     Route::get('/inventory/low-stock', [InventoryController::class, 'lowStock'])
         ->name('inventory.low-stock');
