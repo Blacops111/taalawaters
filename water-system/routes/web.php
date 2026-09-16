@@ -107,6 +107,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/sales-orders/report/pdf', [SalesOrderController::class, 'reportPdf'])
         ->name('sales-orders.report.pdf');
 
+    Route::get('/sales-orders/report/excel', [SalesOrderController::class, 'reportExcel'])
+        ->name('sales-orders.report.excel');
+
     Route::get('/sales-orders/create', [SalesOrderController::class, 'create'])
         ->name('sales-orders.create');
 
