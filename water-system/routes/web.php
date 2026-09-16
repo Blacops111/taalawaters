@@ -110,6 +110,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/sales-orders/{salesOrder}/items', [SalesOrderController::class, 'storeItem'])
         ->name('sales-orders.items.store');
 
+    Route::post('/sales-orders/{salesOrder}/complete', [SalesOrderController::class, 'complete'])
+        ->name('sales-orders.complete');
+
     Route::get('/products', [ProductController::class, 'index'])
         ->name('products.index');
 
