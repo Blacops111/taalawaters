@@ -32,8 +32,19 @@ class SalesOrderController extends Controller
         return view('sales-orders.create', compact('customers', 'recentDrafts'));
     }
 
-    public function history()
+    public function history(Request $request)
     {
+        $filters = $request->validate([
+            'reference' => ['nullable', 'string', 'max:150'],
+            'sale_type' => ['nullable', Rule::in([
+                SalesOrder::TYPE_WALK_IN,
+                SalesOrder::TYPE_BUSINESS,
+            ])],
+            'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+
         $completedSales = SalesOrder::query()
             ->with([
                 'customer',
@@ -41,11 +52,43 @@ class SalesOrderController extends Controller
                 'items.inventoryItem',
             ])
             ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->when(
+                filled($filters['reference'] ?? null),
+                fn ($query) => $query->where(
+                    'reference',
+                    'like',
+                    '%'.trim($filters['reference']).'%'
+                )
+            )
+            ->when(
+                filled($filters['sale_type'] ?? null),
+                fn ($query) => $query->where('sale_type', $filters['sale_type'])
+            )
+            ->when(
+                filled($filters['customer_id'] ?? null),
+                fn ($query) => $query->where('customer_id', $filters['customer_id'])
+            )
+            ->when(
+                filled($filters['date_from'] ?? null),
+                fn ($query) => $query->whereDate('sale_at', '>=', $filters['date_from'])
+            )
+            ->when(
+                filled($filters['date_to'] ?? null),
+                fn ($query) => $query->whereDate('sale_at', '<=', $filters['date_to'])
+            )
             ->orderByDesc('sale_at')
             ->orderByDesc('id')
-            ->paginate(25);
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('sales-orders.history', compact('completedSales'));
+        $customers = Customer::query()
+            ->whereHas('salesOrders', function ($query) {
+                $query->where('status', SalesOrder::STATUS_COMPLETED);
+            })
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('sales-orders.history', compact('completedSales', 'customers', 'filters'));
     }
 
     public function store(Request $request, SalesOrderDraftService $draftService)
