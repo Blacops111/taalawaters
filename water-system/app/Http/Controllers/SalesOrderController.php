@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\InventoryItem;
 use App\Models\SalesOrder;
+use App\Models\SalesOrderItem;
 use App\Services\SalesOrderCompletionService;
 use App\Services\SalesOrderDraftItemService;
 use App\Services\SalesOrderDraftService;
@@ -185,6 +186,18 @@ class SalesOrderController extends Controller
         return redirect()
             ->route('sales-orders.edit', $salesOrder)
             ->with('success', 'Product was added to draft sales order #'.$salesOrder->id.' using the configured sales price.');
+    }
+
+    public function destroyItem(
+        SalesOrder $salesOrder,
+        SalesOrderItem $salesOrderItem,
+        SalesOrderDraftItemService $itemService,
+    ) {
+        $itemService->removeItem($salesOrder, $salesOrderItem);
+
+        return redirect()
+            ->route('sales-orders.edit', $salesOrder)
+            ->with('success', 'Product was removed from draft sales order #'.$salesOrder->id.' and the draft total was recalculated.');
     }
 
     public function complete(
