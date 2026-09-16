@@ -20,7 +20,7 @@
 
     @if($errors->any())
         <div class="alert alert-danger">
-            <strong>Production run was not completed.</strong>
+            <strong>Production action was not completed.</strong>
             <ul class="mb-0 mt-2">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -119,23 +119,50 @@
                             <th>Date</th>
                             <th>Finished Product</th>
                             <th class="text-end">Quantity</th>
+                            <th>Status</th>
                             <th>Recorded By</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($recentRuns as $run)
+                            @php
+                                $quantity = (float) $run->quantity_produced;
+                                $formattedQuantity = abs($quantity - round($quantity)) < 0.0005
+                                    ? number_format($quantity, 0)
+                                    : number_format($quantity, 3);
+                            @endphp
                             <tr>
                                 <td><strong>{{ $run->reference }}</strong></td>
                                 <td>{{ $run->occurred_at?->format('Y-m-d H:i') }}</td>
                                 <td>{{ $run->finishedProduct?->name }}</td>
                                 <td class="text-end">
-                                    {{ number_format((float) $run->quantity_produced, 0) }} {{ $run->finishedProduct?->unit }}
+                                    {{ $formattedQuantity }} {{ $run->finishedProduct?->unit }}
+                                </td>
+                                <td>
+                                    @if($run->status === 'reversed')
+                                        <span class="badge text-bg-secondary">Reversed</span>
+                                    @else
+                                        <span class="badge text-bg-success">Completed</span>
+                                    @endif
                                 </td>
                                 <td>{{ $run->creator?->name ?? $run->creator?->email ?? 'System' }}</td>
+                                <td class="text-end">
+                                    @if($run->status === 'completed' && !$run->reversal)
+                                        <a
+                                            href="{{ route('production.runs.reversal', $run) }}"
+                                            class="btn btn-sm btn-outline-danger"
+                                        >
+                                            Reverse
+                                        </a>
+                                    @elseif($run->reversal)
+                                        <span class="text-muted small">{{ $run->reversal->reference }}</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     No production runs recorded yet.
                                 </td>
                             </tr>
