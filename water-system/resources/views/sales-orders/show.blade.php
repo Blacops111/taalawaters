@@ -4,17 +4,34 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <h2 class="mb-1">Completed Sale {{ $salesOrder->reference }}</h2>
-            <p class="text-muted mb-0">Read-only sale record and inventory deduction audit trail.</p>
+            <h2 class="mb-1">Sale {{ $salesOrder->reference }}</h2>
+            <p class="text-muted mb-0">Read-only sale record with inventory and reversal audit history.</p>
         </div>
-        <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-secondary">
-            Back to Completed Sales
-        </a>
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            @if($salesOrder->status === \App\Models\SalesOrder::STATUS_COMPLETED)
+                <a href="{{ route('sales-orders.reversal', $salesOrder) }}" class="btn btn-outline-danger">
+                    Reverse Sale
+                </a>
+            @endif
+            <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-secondary">
+                Back to Sales History
+            </a>
+        </div>
     </div>
 
-    <div class="alert alert-info">
-        This sale is completed and read-only. Its original sale values and inventory movements are preserved for audit history.
-    </div>
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
+    @if($salesOrder->status === \App\Models\SalesOrder::STATUS_REVERSED)
+        <div class="alert alert-warning">
+            This sale has been reversed. The original sale values remain unchanged for audit history, and the finished stock deduction was restored through separate reversal movements.
+        </div>
+    @else
+        <div class="alert alert-info">
+            This sale is completed and read-only. Its original sale values and inventory movements are preserved for audit history.
+        </div>
+    @endif
 
     <div class="card mb-4">
         <div class="card-header"><strong>Sale Summary</strong></div>
@@ -26,7 +43,11 @@
                 </div>
                 <div class="col-md-3">
                     <div class="text-muted small">Status</div>
-                    <span class="badge bg-success">Completed</span>
+                    @if($salesOrder->status === \App\Models\SalesOrder::STATUS_REVERSED)
+                        <span class="badge bg-warning text-dark">Reversed</span>
+                    @else
+                        <span class="badge bg-success">Completed</span>
+                    @endif
                 </div>
                 <div class="col-md-3">
                     <div class="text-muted small">Sale Type</div>
@@ -92,8 +113,8 @@
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header"><strong>Inventory Deduction Audit</strong></div>
+    <div class="card mb-4">
+        <div class="card-header"><strong>Original Inventory Deduction Audit</strong></div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -127,5 +148,57 @@
             </div>
         </div>
     </div>
+
+    @if($salesOrder->reversal)
+        <div class="card border-warning">
+            <div class="card-header"><strong>Sale Reversal Audit</strong></div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="text-muted small">Reversal Reference</div>
+                        <strong>{{ $salesOrder->reversal->reference }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Reversed At</div>
+                        <strong>{{ $salesOrder->reversal->reversed_at?->format('Y-m-d H:i') }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Reversed By</div>
+                        <strong>{{ $salesOrder->reversal->reversedBy?->name ?? 'System' }}</strong>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="text-muted small">Reason</div>
+                        <div>{{ $salesOrder->reversal->reason }}</div>
+                    </div>
+                </div>
+
+                <h6>Inventory Restoration</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Reference</th>
+                                <th>Product</th>
+                                <th class="text-end">Inventory Change</th>
+                                <th>Occurred At</th>
+                                <th>Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($salesOrder->reversal->stockMovements as $movement)
+                                <tr>
+                                    <td><strong>{{ $movement->reference }}</strong></td>
+                                    <td>{{ $movement->inventoryItem?->name ?? 'Unavailable Item' }}</td>
+                                    <td class="text-end text-success fw-semibold">+{{ number_format((float) $movement->quantity_delta, 3) }}</td>
+                                    <td>{{ $movement->occurred_at?->format('Y-m-d H:i') }}</td>
+                                    <td>{{ $movement->creator?->name ?? 'System' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 @endsection
