@@ -4,10 +4,10 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-1">Customers</h2>
-            <p class="text-muted mb-0">Manage registered customers for V2 sales. Walk-in sales can still be recorded without a registered customer.</p>
+            <h2 class="mb-1">Business Customers</h2>
+            <p class="text-muted mb-0">Manage supermarkets, hotels, offices, distributors and other bulk/repeat customers. Walk-in sales do not require a customer account.</p>
         </div>
-        <a href="{{ route('customers.create') }}" class="btn btn-primary">Add Customer</a>
+        <a href="{{ route('customers.create') }}" class="btn btn-primary">Add Business Customer</a>
     </div>
 
     @if(session('success'))
@@ -20,7 +20,9 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Name</th>
+                            <th>Business / Account Name</th>
+                            <th>Type</th>
+                            <th>Contact Person</th>
                             <th>Phone</th>
                             <th>Email</th>
                             <th>Address</th>
@@ -32,6 +34,8 @@
                         @forelse($customers as $customer)
                             <tr>
                                 <td><strong>{{ $customer->name }}</strong></td>
+                                <td>{{ ucwords(str_replace('_', ' ', $customer->customer_type ?: 'other')) }}</td>
+                                <td>{{ $customer->contact_person ?: '—' }}</td>
                                 <td>{{ $customer->phone ?: '—' }}</td>
                                 <td>{{ $customer->email ?: '—' }}</td>
                                 <td>{{ $customer->address ?: '—' }}</td>
@@ -48,7 +52,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">No registered customers yet.</td>
+                                <td colspan="8" class="text-center text-muted py-4">No business customers registered yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
