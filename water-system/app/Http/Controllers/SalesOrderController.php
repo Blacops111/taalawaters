@@ -92,6 +92,78 @@ class SalesOrderController extends Controller
         return view('sales-orders.history', compact('completedSales', 'customers', 'filters'));
     }
 
+    public function report(Request $request)
+    {
+        $filters = $request->validate([
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
+
+        $salesQuery = SalesOrder::query()
+            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->when(
+                filled($dateFrom),
+                fn ($query) => $query->whereDate('sale_at', '>=', $dateFrom)
+            )
+            ->when(
+                filled($dateTo),
+                fn ($query) => $query->whereDate('sale_at', '<=', $dateTo)
+            );
+
+        $summary = (clone $salesQuery)
+            ->selectRaw(
+                'COUNT(*) as completed_sales_count,
+                 COALESCE(SUM(total_amount), 0) as total_sales_value,
+                 COALESCE(SUM(CASE WHEN sale_type = ? THEN total_amount ELSE 0 END), 0) as walk_in_total,
+                 COALESCE(SUM(CASE WHEN sale_type = ? THEN total_amount ELSE 0 END), 0) as business_total',
+                [SalesOrder::TYPE_WALK_IN, SalesOrder::TYPE_BUSINESS]
+            )
+            ->first();
+
+        $itemQuery = SalesOrderItem::query()
+            ->join('sales_orders', 'sales_order_items.sales_order_id', '=', 'sales_orders.id')
+            ->where('sales_orders.status', SalesOrder::STATUS_COMPLETED)
+            ->when(
+                filled($dateFrom),
+                fn ($query) => $query->whereDate('sales_orders.sale_at', '>=', $dateFrom)
+            )
+            ->when(
+                filled($dateTo),
+                fn ($query) => $query->whereDate('sales_orders.sale_at', '<=', $dateTo)
+            );
+
+        $totalUnitsSold = (float) (clone $itemQuery)
+            ->sum('sales_order_items.quantity');
+
+        $productBreakdown = (clone $itemQuery)
+            ->join('inventory_items', 'sales_order_items.inventory_item_id', '=', 'inventory_items.id')
+            ->select([
+                'inventory_items.id',
+                'inventory_items.sku',
+                'inventory_items.name',
+            ])
+            ->selectRaw('SUM(sales_order_items.quantity) as units_sold')
+            ->selectRaw('SUM(sales_order_items.line_total) as sales_value')
+            ->groupBy(
+                'inventory_items.id',
+                'inventory_items.sku',
+                'inventory_items.name'
+            )
+            ->orderByDesc('sales_value')
+            ->orderBy('inventory_items.name')
+            ->get();
+
+        return view('sales-orders.report', compact(
+            'filters',
+            'summary',
+            'totalUnitsSold',
+            'productBreakdown'
+        ));
+    }
+
     public function show(SalesOrder $salesOrder)
     {
         if ($salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
