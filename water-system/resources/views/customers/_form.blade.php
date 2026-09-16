@@ -5,7 +5,7 @@
 
 <div class="row g-3">
     <div class="col-md-6">
-        <label for="name" class="form-label">Customer Name</label>
+        <label for="name" class="form-label">Business / Account Name</label>
         <input
             type="text"
             id="name"
@@ -13,9 +13,45 @@
             maxlength="255"
             value="{{ old('name', $customer->name ?? '') }}"
             class="form-control @error('name') is-invalid @enderror"
+            placeholder="Example: Naivas Westlands"
             required
         >
         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+
+    <div class="col-md-6">
+        <label for="customer_type" class="form-label">Customer Type</label>
+        <select
+            id="customer_type"
+            name="customer_type"
+            class="form-select @error('customer_type') is-invalid @enderror"
+            required
+        >
+            <option value="">Select customer type</option>
+            @foreach($customerTypes as $value => $label)
+                <option
+                    value="{{ $value }}"
+                    @selected(old('customer_type', $customer->customer_type ?? '') === $value)
+                >
+                    {{ $label }}
+                </option>
+            @endforeach
+        </select>
+        @error('customer_type')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+
+    <div class="col-md-6">
+        <label for="contact_person" class="form-label">Contact Person <span class="text-muted">(optional)</span></label>
+        <input
+            type="text"
+            id="contact_person"
+            name="contact_person"
+            maxlength="255"
+            value="{{ old('contact_person', $customer->contact_person ?? '') }}"
+            class="form-control @error('contact_person') is-invalid @enderror"
+            placeholder="Example: Jane Wanjiku"
+        >
+        @error('contact_person')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 
     <div class="col-md-6">
@@ -45,7 +81,7 @@
     </div>
 
     <div class="col-md-6">
-        <label for="address" class="form-label">Address <span class="text-muted">(optional)</span></label>
+        <label for="address" class="form-label">Delivery / Business Address <span class="text-muted">(optional)</span></label>
         <textarea
             id="address"
             name="address"
@@ -67,13 +103,13 @@
                 value="1"
                 @checked((bool) old('is_active', $customer->is_active ?? true))
             >
-            <label class="form-check-label" for="is_active">Active customer</label>
+            <label class="form-check-label" for="is_active">Active business customer</label>
         </div>
-        <div class="form-text">Inactive customers remain in historical sales records but will not be offered for new sales later.</div>
+        <div class="form-text">Inactive accounts stay in historical sales records but will not be available for new business-customer sales.</div>
     </div>
 </div>
 
 <div class="mt-4 d-flex gap-2">
-    <button type="submit" class="btn btn-primary">{{ isset($customer) ? 'Update Customer' : 'Save Customer' }}</button>
+    <button type="submit" class="btn btn-primary">{{ isset($customer) ? 'Update Business Customer' : 'Save Business Customer' }}</button>
     <a href="{{ route('customers.index') }}" class="btn btn-outline-secondary">Cancel</a>
 </div>
