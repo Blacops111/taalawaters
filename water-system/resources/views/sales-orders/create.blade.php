@@ -2,9 +2,14 @@
 
 @section('content')
 <div class="container">
-    <div class="mb-4">
-        <h2 class="mb-1">New V2 Sale</h2>
-        <p class="text-muted mb-0">Start a walk-in or business customer sale. This step creates a draft only; it does not deduct stock yet.</p>
+    <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">New V2 Sale</h2>
+            <p class="text-muted mb-0">Start a walk-in or business customer sale. This step creates a draft only; it does not deduct stock yet.</p>
+        </div>
+        <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-secondary">
+            Completed Sales History
+        </a>
     </div>
 
     @if(session('success'))
