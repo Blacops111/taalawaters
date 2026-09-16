@@ -10,6 +10,7 @@ use App\Models\SalesOrderItem;
 use App\Services\SalesOrderCompletionService;
 use App\Services\SalesOrderDraftItemService;
 use App\Services\SalesOrderDraftService;
+use App\Services\SalesOrderReversalService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -54,8 +55,12 @@ class SalesOrderController extends Controller
                 'customer',
                 'creator',
                 'items.inventoryItem',
+                'reversal.reversedBy',
             ])
-            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->whereIn('status', [
+                SalesOrder::STATUS_COMPLETED,
+                SalesOrder::STATUS_REVERSED,
+            ])
             ->when(
                 filled($filters['reference'] ?? null),
                 fn ($query) => $query->where(
@@ -87,7 +92,10 @@ class SalesOrderController extends Controller
 
         $customers = Customer::query()
             ->whereHas('salesOrders', function ($query) {
-                $query->where('status', SalesOrder::STATUS_COMPLETED);
+                $query->whereIn('status', [
+                    SalesOrder::STATUS_COMPLETED,
+                    SalesOrder::STATUS_REVERSED,
+                ]);
             })
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -136,7 +144,10 @@ class SalesOrderController extends Controller
 
     public function show(SalesOrder $salesOrder)
     {
-        if ($salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
+        if (! in_array($salesOrder->status, [
+            SalesOrder::STATUS_COMPLETED,
+            SalesOrder::STATUS_REVERSED,
+        ], true)) {
             abort(404);
         }
 
@@ -146,9 +157,50 @@ class SalesOrderController extends Controller
             'items.inventoryItem',
             'stockMovements.inventoryItem',
             'stockMovements.creator',
+            'reversal.reversedBy',
+            'reversal.stockMovements.inventoryItem',
+            'reversal.stockMovements.creator',
         ]);
 
         return view('sales-orders.show', compact('salesOrder'));
+    }
+
+    public function reversal(SalesOrder $salesOrder)
+    {
+        if ($salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
+            abort(404);
+        }
+
+        $salesOrder->load([
+            'customer',
+            'creator',
+            'items.inventoryItem',
+        ]);
+
+        return view('sales-orders.reversal', compact('salesOrder'));
+    }
+
+    public function reverse(
+        Request $request,
+        SalesOrder $salesOrder,
+        SalesOrderReversalService $reversalService,
+    ) {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $reversal = $reversalService->reverse(
+            $salesOrder,
+            $request->user(),
+            $validated['reason'],
+        );
+
+        return redirect()
+            ->route('sales-orders.show', $salesOrder)
+            ->with(
+                'success',
+                'Sale '.$salesOrder->reference.' was reversed successfully as '.$reversal->reference.'. Finished stock was restored.'
+            );
     }
 
     public function store(Request $request, SalesOrderDraftService $draftService)
