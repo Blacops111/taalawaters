@@ -76,6 +76,13 @@
 
                     </a>
 
+                    <a href="{{ route('customers.index') }}"
+                       class="text-gray-700 hover:text-blue-500">
+
+                        Customers
+
+                    </a>
+
                     <a href="{{ route('products.index') }}"
                        class="text-gray-700 hover:text-blue-500">
 
