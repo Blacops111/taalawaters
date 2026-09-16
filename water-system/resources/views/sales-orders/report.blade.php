@@ -7,7 +7,16 @@
             <h2 class="mb-1">V2 Sales Data Report</h2>
             <p class="text-muted mb-0">Summary of completed V2 sales only. Draft sales are excluded.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a
+                href="{{ route('sales-orders.report.pdf', [
+                    'date_from' => $filters['date_from'] ?? null,
+                    'date_to' => $filters['date_to'] ?? null,
+                ]) }}"
+                class="btn btn-danger"
+            >
+                Download PDF
+            </a>
             <a href="{{ route('sales-orders.history') }}" class="btn btn-outline-primary">Completed Sales History</a>
             <a href="{{ route('sales-orders.create') }}" class="btn btn-outline-secondary">Back to V2 Sales</a>
         </div>
@@ -148,7 +157,7 @@
     </div>
 
     <div class="alert alert-info mt-4 mb-0">
-        PDF and Excel exports will be added after this report screen is verified.
+        PDF export is available. Excel export will be added after the PDF step is verified.
     </div>
 </div>
 @endsection
