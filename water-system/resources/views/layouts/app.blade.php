@@ -79,7 +79,7 @@
                     <a href="{{ route('customers.index') }}"
                        class="text-gray-700 hover:text-blue-500">
 
-                        Customers
+                        Business Customers
 
                     </a>
 
