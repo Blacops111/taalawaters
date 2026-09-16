@@ -1,8 +1,8 @@
-# Taala Water System
+# Taala Crystal
 
-Taala Water System is a Laravel-based business management system for Taala's bottled and bulk water operations. V2 is being rebuilt incrementally on the `taala-v2-development` branch so each module is tested and stabilized before the next one is added.
+Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status:** Phase 2 (Inventory & SKU Foundation) and Phase 3 (Production Management) are functionally complete and locally verified. The next planned module is Phase 4 (Sales & Customers).
+> **Current development status:** Phase 2 (Inventory & SKU Foundation), Phase 3 (Production Management), and Phase 4 (Sales & Customers) are functionally complete and locally verified. The next planned module is Phase 5 (Purchasing).
 
 ## Project goals
 
@@ -19,7 +19,7 @@ Finished Product Inventory
         ↓
 Sales & Customers
         ↓
-Delivery
+Purchasing / Deliveries
         ↓
 Accounting & Reports
 ```
@@ -82,6 +82,7 @@ Important architecture decisions already made:
 - Manual adjustments and reversals must remain auditable.
 - Existing legacy modules remain available during the V2 transition until their replacements are proven.
 - Critical stock-changing workflows use validation, transactions and row locking.
+- Completed financial/stock records are corrected by reversal rather than destructive edits.
 
 ## Phase 2 — Inventory & SKU Foundation
 
@@ -108,7 +109,7 @@ Status: **Functionally complete and tested**
 | `FW-10L` | Finished Water 10 Litre | Finished product |
 | `FW-20L` | Finished Water 20 Litre | Finished product |
 
-Caps, seals and outer packaging remain generic until Taala confirms whether they vary by bottle size.
+Caps, seals and outer packaging remain generic until the business confirms whether they vary by bottle size.
 
 ### Stock movement ledger
 
@@ -121,8 +122,6 @@ Stock Received       +500
 -------------------------
 Live Balance         1475
 ```
-
-This keeps inventory traceable and avoids silently changing a stored total.
 
 ### Inventory capabilities
 
@@ -164,116 +163,188 @@ RAW-WATER live balance
 
 The software foundation includes secure meter registration, UUID meter IDs, hashed tokens, baseline readings, idempotency protection, litre normalization, positive-delta calculation, anomaly review, locking and automatic raw-water stock movements.
 
-A local simulated meter was used to verify that a baseline reading creates no stock and that a later cumulative increase automatically adds the matching litre delta to `RAW-WATER`.
-
-The production hardware connection still depends on the real meter model and interface. Possible interfaces include HTTP/HTTPS, Modbus TCP, RS485/Modbus RTU, pulse output, MQTT or a PLC/IoT gateway.
-
 ## Phase 3 — Production Management
 
 Status: **Functionally complete and tested**
 
-### Phase 3A — Production recipe foundation
+### Production recipe setup
 
-Production recipes link each finished-water SKU to the materials required to produce it.
-
-Main tables:
-
-```text
-production_recipes
-production_recipe_components
-```
-
-The recipe foundation is migrated and verified on MySQL. The shortened composite index name `prod_recipe_component_unique` avoids MySQL's identifier-length limit.
-
-### Phase 3B — Production recipe setup
-
-An admin interface allows the real materials and quantities for each finished product to be configured.
-
-The four finished-water recipes have been configured locally:
+Production recipes link each finished-water SKU to the exact inventory components required to produce it. The four finished-water recipes have been configured locally:
 
 - `FW-500ML`
 - `FW-1L`
 - `FW-10L`
 - `FW-20L`
 
-Each configured recipe uses the inventory ledger items rather than a separate stock source.
+### Production runs
 
-### Phase 3C — Production runs
-
-Production runs now:
+Production runs:
 
 - accept whole finished units only
 - validate the recipe and finished product
-- check every required component before changing stock
+- check all required components before changing stock
 - calculate component usage from the configured recipe
-- block the entire run when any component is insufficient
+- block the entire run if any component is insufficient
 - deduct raw water and packaging materials atomically
 - add finished product stock atomically
 - create a unique `PROD-########` reference
-- keep all input/output movements linked to the production run
+- keep all movements linked to the production run
 
-Whole-unit validation exists both in the HTTP form and in the production service, so fractional finished bottles cannot be created by bypassing the UI.
+### Production run reversal
 
-The local production workflow was verified end-to-end using meter-created raw-water inventory.
-
-### Phase 3D — Production run reversal
-
-Incorrect completed production runs can be reversed without deleting history.
-
-A reversal:
+Incorrect completed production runs can be reversed without deleting history. A reversal:
 
 - requires a reason
 - uses the original production movements rather than recalculating from the current recipe
 - restores the exact consumed components
 - removes the exact finished-product output
-- blocks a second reversal of the same run
-- blocks reversal when insufficient finished stock remains to remove the original output safely
-- records linked reversal stock movements
+- blocks duplicate reversal
+- blocks reversal if insufficient finished stock remains
+- records linked reversal movements
 - marks the original run as `reversed`
 - creates a `REV-PROD-########` reference
 
-This workflow was manually verified by reversing the earlier fractional test run `PROD-00000001` as `REV-PROD-00000001`.
+## Phase 4 — Sales & Customers
+
+Status: **Functionally complete and tested**
+
+Phase 4 introduced a V2 sales flow that uses the V2 inventory ledger as the source of truth instead of the legacy `stocks` table.
+
+### Business customers
+
+Registered business customers support:
+
+- supermarket
+- distributor / wholesaler
+- hotel
+- restaurant
+- office / company
+- institution
+- shop / retailer
+- other business
+
+Customer records include name, customer type, contact person, phone, email, address and active/inactive status. Customers are deactivated rather than deleted so historical sales remain intact.
+
+Walk-in sales do not require a registered customer.
+
+### Sales pricing
+
+Finished products have server-managed retail and wholesale prices:
+
+- walk-in sale → retail price
+- business customer sale → wholesale price
+
+Sales staff cannot submit arbitrary unit prices. The server derives the price and line total from the configured inventory item price.
+
+### Draft sales
+
+The V2 sales flow supports:
+
+- walk-in and business-customer drafts
+- whole-unit quantities only
+- eligible active/sellable finished products only
+- adding/removing draft items
+- automatic total recalculation
+- no inventory deduction while the order is still a draft
+
+### Sale completion
+
+Completing a sale:
+
+- uses a transaction with row locking
+- rechecks the sale is still a draft
+- requires at least one item
+- aggregates duplicate product lines before stock validation
+- verifies active/sellable finished-product eligibility
+- checks live ledger balance
+- blocks insufficient stock
+- generates `SALE-########`
+- recomputes the stored total from historical line totals
+- writes negative `sale` stock movements
+- prevents a second completion/double stock deduction
+
+### Completed sales history and details
+
+Completed and reversed V2 sales are read-only audit records. The sales history supports filters for:
+
+- sale reference
+- sale type
+- business customer
+- date range
+
+The sale detail page preserves:
+
+- sale reference and status
+- sale type and customer
+- sale date
+- recorded user
+- historical unit prices and line totals
+- notes
+- original stock deductions
+- reversal details and stock restoration movements when applicable
+
+### Sales Data Report
+
+The V2 Sales Data Report summarizes **completed, non-reversed sales only** and supports date filtering.
+
+It includes:
+
+- completed sales count
+- total sales value
+- total units sold
+- walk-in sales value
+- business sales value
+- per-product units sold
+- per-product sales value
+
+The report is available on-screen and can be exported as:
+
+- PDF
+- Excel workbook with `Summary` and `Product Breakdown` sheets
+
+Date filters are preserved in both export formats.
+
+### Completed-sale reversal / correction
+
+Completed sales are corrected through an audit-safe reversal rather than editing or deleting the original transaction.
+
+A reversal:
+
+- requires a reason
+- locks the original sale before changing anything
+- verifies the stored sale lines match the original sale stock movements
+- restores the exact quantity originally deducted
+- creates `sale_reversal_restore` stock movements
+- creates a unique `REV-SALE-########` reference
+- records who reversed the sale and when
+- marks the original sale as `reversed`
+- prevents a second reversal
+- leaves the original sale and values visible for audit history
+- removes the reversed sale from active sales-report revenue totals
+
+The reversal flow has been verified both automatically and manually against real local stock balances.
+
+## Taala Crystal branding
+
+The visible system branding now uses **Taala Crystal** rather than the earlier “Taala Water System” name.
+
+The dashboard uses the Taala Crystal water-themed identity and company details for Uholo Fresh Springs Co. Ltd. PDF and Excel sales reports also use the Taala Crystal branding.
 
 ## Existing legacy modules
 
-The original Taala system still contains working or partially working modules while V2 replacements are developed.
-
-### Authentication and admin access
-
-- login/authentication
-- admin middleware
-- protected admin routes
-- profile routes
-
-### Products
-
-Legacy product CRUD supports create, list, edit, delete, selling price and cost price.
-
-### Legacy stocks
-
-The original `stocks` module remains in place. V2 inventory uses `inventory_items` and `stock_movements`, so the legacy stock module should not be used as the V2 ledger source of truth.
+Legacy Products, Stocks, Sales and parts of the dashboard remain present during the V2 transition. They should not be treated as the V2 inventory source of truth.
 
 ### Legacy sales
 
-Existing sales functionality includes sales entry, product selection, quantity, sale price, total amount, sale date, stock deduction, PDF export and Excel export.
-
-Phase 4 will replace/bridge this carefully so V2 sales deduct finished-product inventory from the V2 stock ledger instead of creating a second competing stock system.
+The original sales module still uses legacy `products`, `sales` and `stocks` data. V2 sales now has its own complete ledger-backed workflow. Legacy removal/migration will be handled later after the wider V2 system is complete and deployment migration rules are defined.
 
 ### Dashboard
 
-The legacy dashboard currently includes product, stock, sales, revenue, profit, sales-over-time, product-distribution, stock-level and low-stock views.
-
-Current legacy profit uses:
-
-```text
-(sale price - current product cost price) × quantity sold
-```
-
-This is not yet historical costing and will be revisited during later accounting work.
+The dashboard still contains legacy commercial metrics/charts in addition to the new Taala Crystal visual identity. A deeper V2 dashboard/reporting rebuild is planned for Phase 8.
 
 ### Trucks / logistics
 
-A starter Truck module exists, but future V2 logistics will use a more flexible vehicle structure supporting motorbikes and tanker trucks.
+A starter Truck module exists, but future V2 logistics will use a more flexible structure supporting motorbikes and tanker trucks.
 
 ## V2 database areas introduced so far
 
@@ -286,31 +357,11 @@ production_recipes
 production_recipe_components
 production_runs
 production_run_reversals
+customers
+sales_orders
+sales_order_items
+sales_order_reversals
 ```
-
-### `inventory_items`
-
-Stores the SKU master catalog, including SKU, name, category, unit, reorder level, sellable flag and active flag.
-
-### `stock_movements`
-
-Stores every signed inventory change, including movement type, quantity delta, source linkage, user, occurrence time, reference and notes.
-
-### `water_meters` / `water_meter_readings`
-
-Store meter configuration and normalized cumulative reading history used to create automated raw-water stock movements.
-
-### `production_recipes` / `production_recipe_components`
-
-Store finished-product recipes and their component requirements.
-
-### `production_runs`
-
-Stores completed/reversed production transactions and their audit metadata.
-
-### `production_run_reversals`
-
-Stores safe reversals of completed production runs and links the correcting movements back to the original run.
 
 ## Installation / local setup
 
@@ -345,26 +396,32 @@ npm run dev
 
 ## Focused tests used during V2 development
 
+Examples:
+
 ```bash
 php artisan test --filter=WaterMeterReadingTest
-php artisan test --filter=InventoryItemSeederTest
-php artisan test --filter=InventoryPageTest
-php artisan test --filter=InventoryReceiptTest
-php artisan test --filter=InventoryMovementHistoryTest
-php artisan test --filter=InventoryLowStockTest
 php artisan test --filter=InventoryAdjustmentTest
-php artisan test --filter=ProductionRecipeFoundationTest
-php artisan test --filter=ProductionRecipeSetupTest
 php artisan test --filter=ProductionRun
 php artisan test --filter=ProductionRunReversal
-php artisan test --filter=ProductionRunReversalController
+php artisan test --filter=CustomerManagementTest
+php artisan test --filter=SalesOrderAutomaticPricingTest
+php artisan test --filter=SalesOrderCompletion
+php artisan test --filter=SalesDataReport
+php artisan test --filter=SalesOrderReversal
+php artisan test --filter=TaalaCrystalBranding
 ```
 
-Recent verified production results include:
+### Latest full regression result
 
-- `ProductionRun` tests: **8 passed / 49 assertions**
-- `ProductionRunReversal` service tests: **5 passed / 26 assertions**
-- `ProductionRunReversalController` tests: **3 passed / 26 assertions**
+Verified locally on **16 September 2026**:
+
+```text
+Tests:      123 passed
+Assertions: 615
+Duration:   30.23s
+```
+
+This complete suite covers authentication, inventory, water-meter ingestion, production, production reversal, customer management, sales pricing, draft sales, stock deduction, sales history/details, PDF/Excel reporting, sale reversal and Taala Crystal branding.
 
 To run the complete suite:
 
@@ -402,6 +459,7 @@ Current and planned controls include:
 - meter-reading idempotency protection
 - append-only inventory audit trails
 - safe reversal workflows instead of destructive edits
+- server-authoritative sales prices and totals
 - production `APP_DEBUG=false`
 - environment-based secrets
 - backups and recovery planning
@@ -416,7 +474,7 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 
 - Make small, focused changes.
 - Inspect existing models, migrations, routes and controllers before modifying behavior.
-- Do not invent business rules that Taala has not confirmed.
+- Do not invent business rules that have not been confirmed.
 - Preserve working data and audit history.
 - Do not directly overwrite inventory balances; create stock movements.
 - Do not manually enter routine borehole raw-water quantities.
@@ -426,29 +484,23 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 - Add focused tests for stock, financial and authorization behavior.
 - Fix errors before moving to the next module.
 
-## Next planned work — Phase 4: Sales & Customers
+## Next planned work — Phase 5: Purchasing
 
-Phase 4 will be built incrementally rather than replacing the legacy sales module in one large change.
+Phase 5 will be started only after the current Phase 4 milestone is intentionally closed and development resumes.
 
-The first planned step is **Phase 4A — Sales foundation**, beginning with the V2 sales/customer data model and clear rules for how a sale deducts finished-product inventory.
+Planned purchasing work includes:
 
-Key principles for Phase 4:
+- purchase requests
+- supplier records
+- purchase approval flow
+- purchased-material receiving integration
+- audit history
+- links between purchases and V2 inventory receipts
 
-- only sell active sellable finished inventory items
-- server-side authoritative prices and totals
-- prevent sales that exceed available finished stock
-- use stock movements as the inventory source of truth
-- preserve sale price/cost information needed for later historical reporting
-- keep customer support flexible for walk-in and named customers
-- make sale corrections/reversals auditable rather than deleting financial history
-- keep the legacy sales module isolated until the V2 flow is proven
+Exact business rules will be confirmed incrementally before implementation.
 
-Later Phase 4 work will cover customer management, sales entry, receipts/invoices, sales history, reports and controlled sale reversal/correction.
+## Future roadmap after Purchasing
 
-## Future roadmap after Sales
-
-- purchasing / purchase requests
-- supplier management
 - delivery notes
 - drivers
 - vehicles / motorbikes / tanker trucks
@@ -456,7 +508,7 @@ Later Phase 4 work will cover customer management, sales entry, receipts/invoice
 - accounting integration
 - trial balance
 - balance sheet
-- richer dashboard/reports
+- richer V2 dashboard/reports
 - expanded role permissions
 - security hardening
 - performance testing
@@ -465,4 +517,4 @@ Later Phase 4 work will cover customer management, sales entry, receipts/invoice
 
 ## Project status note
 
-This README reflects the `taala-v2-development` branch status as of **16 September 2026**. Phase 2 and Phase 3 are verified milestones; Phase 4 is next.
+This README reflects the `taala-v2-development` branch status as of **16 September 2026**. Phase 2, Phase 3 and Phase 4 are verified milestones. The full regression suite currently passes with **123 tests and 615 assertions**. Phase 5 (Purchasing) is next when development resumes.
