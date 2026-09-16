@@ -91,6 +91,23 @@ class SalesOrderController extends Controller
         return view('sales-orders.history', compact('completedSales', 'customers', 'filters'));
     }
 
+    public function show(SalesOrder $salesOrder)
+    {
+        if ($salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
+            abort(404);
+        }
+
+        $salesOrder->load([
+            'customer',
+            'creator',
+            'items.inventoryItem',
+            'stockMovements.inventoryItem',
+            'stockMovements.creator',
+        ]);
+
+        return view('sales-orders.show', compact('salesOrder'));
+    }
+
     public function store(Request $request, SalesOrderDraftService $draftService)
     {
         $validated = $request->validate([
