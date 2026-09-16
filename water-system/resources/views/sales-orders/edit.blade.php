@@ -36,12 +36,16 @@
                     <strong>{{ $salesOrder->customer?->name ?? 'Walk-in' }}</strong>
                 </div>
                 <div class="col-md-3">
-                    <div class="text-muted small">Sale Date</div>
-                    <strong>{{ $salesOrder->sale_at?->format('Y-m-d H:i') }}</strong>
+                    <div class="text-muted small">Price Level</div>
+                    <strong>{{ $salesOrder->sale_type === 'business' ? 'Wholesale Price' : 'Retail Price' }}</strong>
                 </div>
                 <div class="col-md-3">
                     <div class="text-muted small">Draft Total</div>
                     <strong>KES {{ number_format((float) $salesOrder->total_amount, 2) }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-muted small">Sale Date</div>
+                    <strong>{{ $salesOrder->sale_at?->format('Y-m-d H:i') }}</strong>
                 </div>
             </div>
         </div>
@@ -54,16 +58,22 @@
                 @csrf
 
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-5">
+                    <div class="col-md-7">
                         <label for="inventory_item_id" class="form-label">Finished Product</label>
                         <select id="inventory_item_id" name="inventory_item_id" class="form-select" required>
                             <option value="">-- Select Finished Product --</option>
                             @foreach($finishedProducts as $product)
+                                @php
+                                    $displayPrice = $product->{$priceColumn};
+                                @endphp
                                 <option value="{{ $product->id }}" @selected((string) old('inventory_item_id') === (string) $product->id)>
-                                    {{ $product->sku }} — {{ $product->name }}
+                                    {{ $product->sku }} — {{ $product->name }} — KES {{ number_format((float) $displayPrice, 2) }}
                                 </option>
                             @endforeach
                         </select>
+                        <div class="form-text">
+                            Price is selected automatically from the admin-configured {{ $salesOrder->sale_type === 'business' ? 'wholesale' : 'retail' }} price.
+                        </div>
                     </div>
 
                     <div class="col-md-3">
@@ -81,21 +91,7 @@
                         <div class="form-text">Whole finished units only.</div>
                     </div>
 
-                    <div class="col-md-3">
-                        <label for="unit_price" class="form-label">Unit Price (KES)</label>
-                        <input
-                            type="number"
-                            id="unit_price"
-                            name="unit_price"
-                            min="0"
-                            step="0.01"
-                            value="{{ old('unit_price') }}"
-                            class="form-control"
-                            required
-                        >
-                    </div>
-
-                    <div class="col-md-1">
+                    <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">Add</button>
                     </div>
                 </div>
@@ -149,7 +145,7 @@
     </div>
 
     <div class="alert alert-info mt-4 mb-0">
-        This is still a draft. Adding products here does not reduce inventory. Stock validation and deduction will happen only when we add the sale-completion step.
+        Prices are controlled by the admin sales-pricing setup. This is still a draft, so inventory is not reduced yet.
     </div>
 </div>
 @endsection
