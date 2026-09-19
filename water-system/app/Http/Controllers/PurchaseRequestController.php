@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryItem;
 use App\Models\PurchaseRequest;
+use App\Models\PurchaseRequestItem;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseRequestController extends Controller
 {
@@ -79,5 +82,106 @@ class PurchaseRequestController extends Controller
                 'success',
                 $purchaseRequest->reference.' was created as a draft purchase request.'
             );
+    }
+
+    public function edit(PurchaseRequest $purchaseRequest)
+    {
+        $purchaseRequest->load([
+            'supplier:id,name,is_active',
+            'requester:id,name',
+            'items.inventoryItem:id,sku,name,category,unit',
+        ]);
+
+        $purchasableItems = InventoryItem::query()
+            ->where('is_active', true)
+            ->whereNotIn('category', ['raw_water', 'finished_product'])
+            ->orderBy('name')
+            ->get(['id', 'sku', 'name', 'category', 'unit']);
+
+        return view(
+            'purchase-requests.edit',
+            compact('purchaseRequest', 'purchasableItems')
+        );
+    }
+
+    public function storeItem(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $this->ensureDraft($purchaseRequest);
+
+        $validated = $request->validate([
+            'inventory_item_id' => [
+                'required',
+                'integer',
+                Rule::exists('inventory_items', 'id')->where(
+                    fn ($query) => $query
+                        ->where('is_active', true)
+                        ->whereNotIn('category', ['raw_water', 'finished_product'])
+                ),
+            ],
+            'quantity' => ['required', 'numeric', 'gt:0', 'max:9999999999999'],
+        ]);
+
+        DB::transaction(function () use ($purchaseRequest, $validated) {
+            $lockedRequest = PurchaseRequest::query()
+                ->whereKey($purchaseRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureDraft($lockedRequest);
+
+            $alreadyExists = PurchaseRequestItem::query()
+                ->where('purchase_request_id', $lockedRequest->id)
+                ->where('inventory_item_id', $validated['inventory_item_id'])
+                ->exists();
+
+            if ($alreadyExists) {
+                throw ValidationException::withMessages([
+                    'inventory_item_id' => 'This material is already on the purchase request.',
+                ]);
+            }
+
+            $lockedRequest->items()->create([
+                'inventory_item_id' => $validated['inventory_item_id'],
+                'quantity' => $validated['quantity'],
+            ]);
+        }, 3);
+
+        return redirect()
+            ->route('purchase-requests.edit', $purchaseRequest)
+            ->with('success', 'Requested material was added.');
+    }
+
+    public function destroyItem(
+        PurchaseRequest $purchaseRequest,
+        PurchaseRequestItem $purchaseRequestItem
+    ) {
+        DB::transaction(function () use ($purchaseRequest, $purchaseRequestItem) {
+            $lockedRequest = PurchaseRequest::query()
+                ->whereKey($purchaseRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureDraft($lockedRequest);
+
+            $item = PurchaseRequestItem::query()
+                ->whereKey($purchaseRequestItem->id)
+                ->where('purchase_request_id', $lockedRequest->id)
+                ->firstOrFail();
+
+            $item->delete();
+        }, 3);
+
+        return redirect()
+            ->route('purchase-requests.edit', $purchaseRequest)
+            ->with('success', 'Requested material was removed.');
+    }
+
+    private function ensureDraft(PurchaseRequest $purchaseRequest): void
+    {
+        if ($purchaseRequest->status !== PurchaseRequest::STATUS_DRAFT) {
+            throw ValidationException::withMessages([
+                'purchase_request' => 'Only draft purchase requests can be changed.',
+            ]);
+        }
     }
 }
