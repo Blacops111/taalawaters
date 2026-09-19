@@ -90,12 +90,13 @@ class SupplierManagementTest extends TestCase
         $this->assertNotNull(Supplier::find($supplier->id));
     }
 
-    public function test_non_admin_cannot_open_supplier_management(): void
+    public function test_non_admin_is_redirected_away_from_supplier_management(): void
     {
         $staff = User::factory()->create(['role' => 'staff']);
 
         $this->actingAs($staff)
             ->get(route('suppliers.index'))
-            ->assertForbidden();
+            ->assertRedirect('/dashboard')
+            ->assertSessionHas('error', 'Access denied.');
     }
 }
