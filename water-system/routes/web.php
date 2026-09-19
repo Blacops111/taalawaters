@@ -6,6 +6,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionRecipeController;
 use App\Http\Controllers\ProductionRunController;
+use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SalesOrderController;
@@ -99,6 +100,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])
         ->name('customers.update');
 
+
+
+    Route::get('/purchase-requests', [PurchaseRequestController::class, 'index'])
+        ->name('purchase-requests.index');
+
+    Route::get('/purchase-requests/create', [PurchaseRequestController::class, 'create'])
+        ->name('purchase-requests.create');
+
+    Route::post('/purchase-requests', [PurchaseRequestController::class, 'store'])
+        ->name('purchase-requests.store');
 
     Route::get('/suppliers', [SupplierController::class, 'index'])
         ->name('suppliers.index');
