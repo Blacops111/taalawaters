@@ -77,6 +77,28 @@
             color: var(--taala-deep-blue);
         }
 
+        .taala-user {
+            color: #617682;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+
+        .taala-logout {
+            border: 1px solid #b9d9df;
+            background: #fff;
+            color: var(--taala-deep-blue);
+            font-size: .86rem;
+            font-weight: 700;
+            padding: .45rem .75rem;
+            border-radius: .65rem;
+        }
+
+        .taala-logout:hover {
+            background: var(--taala-deep-blue);
+            border-color: var(--taala-deep-blue);
+            color: #fff;
+        }
+
         .taala-main {
             padding-top: 1.6rem;
             padding-bottom: 2.5rem;
@@ -107,6 +129,16 @@
                     <a href="{{ route('stocks.index') }}" class="taala-nav-link">Stocks</a>
                     <a href="{{ route('sales.index') }}" class="taala-nav-link">Sales</a>
                 </div>
+
+                @auth
+                    <div class="ms-lg-auto d-flex align-items-center gap-2 flex-wrap">
+                        <span class="taala-user">{{ auth()->user()->name }}</span>
+                        <form method="POST" action="{{ route('logout') }}" class="m-0">
+                            @csrf
+                            <button type="submit" class="taala-logout">Logout</button>
+                        </form>
+                    </div>
+                @endauth
             </div>
         </div>
     </nav>
