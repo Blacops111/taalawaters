@@ -54,6 +54,12 @@
                                         @case('approved')
                                             <span class="badge bg-success">Approved</span>
                                             @break
+                                        @case('partially_received')
+                                            <span class="badge bg-warning text-dark">Partially Received</span>
+                                            @break
+                                        @case('received')
+                                            <span class="badge bg-success">Received</span>
+                                            @break
                                         @case('rejected')
                                             <span class="badge bg-danger">Rejected</span>
                                             @break
