@@ -2,6 +2,18 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    <a href="{{ route('google.redirect') }}"
+       class="w-full inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 font-bold text-gray-700">G</span>
+        <span>Continue with Google</span>
+    </a>
+
+    <div class="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-gray-400">
+        <div class="h-px flex-1 bg-gray-200"></div>
+        <span>or use email</span>
+        <div class="h-px flex-1 bg-gray-200"></div>
+    </div>
+
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
