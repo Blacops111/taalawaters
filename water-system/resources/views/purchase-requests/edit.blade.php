@@ -241,6 +241,44 @@
                 @endif
             @endif
 
+            @if(in_array($purchaseRequest->status, ['approved', 'partially_received'], true))
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1">Goods Receiving</h5>
+                            <p class="text-muted mb-0">
+                                Record supplier deliveries against the approved quantities. Partial deliveries are supported.
+                            </p>
+                        </div>
+
+                        <a
+                            href="{{ route('purchase-requests.receipts.create', $purchaseRequest) }}"
+                            class="btn btn-success"
+                        >
+                            Receive Goods
+                        </a>
+                    </div>
+                </div>
+            @elseif($purchaseRequest->status === 'received')
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1">Goods Fully Received</h5>
+                            <p class="text-muted mb-0">
+                                All approved quantities have been received into inventory.
+                            </p>
+                        </div>
+
+                        <a
+                            href="{{ route('purchase-requests.receipts.create', $purchaseRequest) }}"
+                            class="btn btn-outline-success"
+                        >
+                            View Goods Receipts
+                        </a>
+                    </div>
+                </div>
+            @endif
+
             @if($purchaseRequest->status === 'submitted')
                 <div class="row g-4 mt-1">
                     <div class="col-lg-6">
