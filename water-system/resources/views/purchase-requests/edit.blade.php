@@ -53,7 +53,7 @@
         </div>
 
         <div class="col-lg-8">
-            @if($purchaseRequest->status === AppModelsPurchaseRequest::STATUS_DRAFT)
+            @if($purchaseRequest->status === 'draft')
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
                         <h5 class="mb-3">Add Requested Material</h5>
@@ -134,7 +134,7 @@
                                     <th>Material</th>
                                     <th>Unit</th>
                                     <th class="text-end">Quantity</th>
-                                    @if($purchaseRequest->status === AppModelsPurchaseRequest::STATUS_DRAFT)
+                                    @if($purchaseRequest->status === 'draft')
                                         <th class="text-end">Action</th>
                                     @endif
                                 </tr>
@@ -147,7 +147,7 @@
                                         <td>{{ $requestItem->inventoryItem->unit }}</td>
                                         <td class="text-end">{{ rtrim(rtrim(number_format((float) $requestItem->quantity, 3, '.', ''), '0'), '.') }}</td>
 
-                                        @if($purchaseRequest->status === AppModelsPurchaseRequest::STATUS_DRAFT)
+                                        @if($purchaseRequest->status === 'draft')
                                             <td class="text-end">
                                                 <form
                                                     method="POST"
@@ -167,7 +167,7 @@
                                 @empty
                                     <tr>
                                         <td
-                                            colspan="{{ $purchaseRequest->status === AppModelsPurchaseRequest::STATUS_DRAFT ? 5 : 4 }}"
+                                            colspan="{{ $purchaseRequest->status === 'draft' ? 5 : 4 }}"
                                             class="text-center text-muted py-5"
                                         >
                                             No materials have been added yet.
