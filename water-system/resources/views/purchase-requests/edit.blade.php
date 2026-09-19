@@ -45,6 +45,14 @@
                         <dt class="col-5">Supplier</dt>
                         <dd class="col-7">{{ $purchaseRequest->supplier?->name ?: 'Not selected yet' }}</dd>
 
+                        @if($purchaseRequest->submitted_at)
+                            <dt class="col-5">Submitted By</dt>
+                            <dd class="col-7">{{ $purchaseRequest->submitter?->name ?: '—' }}</dd>
+
+                            <dt class="col-5">Submitted At</dt>
+                            <dd class="col-7">{{ $purchaseRequest->submitted_at->format('Y-m-d H:i') }}</dd>
+                        @endif
+
                         <dt class="col-5">Notes</dt>
                         <dd class="col-7">{{ $purchaseRequest->notes ?: '—' }}</dd>
                     </dl>
@@ -180,8 +188,42 @@
                 </div>
             </div>
 
+            @if($purchaseRequest->status === 'draft')
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                        <div>
+                            <h5 class="mb-1">Ready for Approval?</h5>
+                            <p class="text-muted mb-0">
+                                Supplier can still be left blank. Submission locks the requested items for review.
+                            </p>
+                        </div>
+
+                        <form
+                            method="POST"
+                            action="{{ route('purchase-requests.submit', $purchaseRequest) }}"
+                            onsubmit="return confirm('Submit this purchase request for approval? You will no longer be able to change its items.');"
+                        >
+                            @csrf
+                            <button
+                                type="submit"
+                                class="btn btn-success"
+                                @disabled($purchaseRequest->items->isEmpty())
+                            >
+                                Submit for Approval
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                @if($purchaseRequest->items->isEmpty())
+                    <div class="form-text mt-2">
+                        Add at least one material before submitting.
+                    </div>
+                @endif
+            @endif
+
             <div class="alert alert-info mt-4 mb-0">
-                Adding or removing requested items does <strong>not</strong> change inventory stock.
+                Adding, removing, or submitting requested items does <strong>not</strong> change inventory stock.
             </div>
         </div>
     </div>
