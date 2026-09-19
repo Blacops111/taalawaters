@@ -67,7 +67,7 @@
                                         href="{{ route('purchase-requests.edit', $purchaseRequest) }}"
                                         class="btn btn-sm btn-outline-primary"
                                     >
-                                        {{ $purchaseRequest->status === AppModelsPurchaseRequest::STATUS_DRAFT ? 'Manage Items' : 'View' }}
+                                        {{ $purchaseRequest->status === 'draft' ? 'Manage Items' : 'View' }}
                                     </a>
                                 </td>
                             </tr>
