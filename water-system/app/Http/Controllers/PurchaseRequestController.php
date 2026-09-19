@@ -89,6 +89,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->load([
             'supplier:id,name,is_active',
             'requester:id,name',
+            'submitter:id,name',
             'items.inventoryItem:id,sku,name,category,unit',
         ]);
 
@@ -149,6 +150,38 @@ class PurchaseRequestController extends Controller
         return redirect()
             ->route('purchase-requests.edit', $purchaseRequest)
             ->with('success', 'Requested material was added.');
+    }
+
+    public function submit(PurchaseRequest $purchaseRequest)
+    {
+        DB::transaction(function () use ($purchaseRequest) {
+            $lockedRequest = PurchaseRequest::query()
+                ->whereKey($purchaseRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureDraft($lockedRequest);
+
+            $hasItems = PurchaseRequestItem::query()
+                ->where('purchase_request_id', $lockedRequest->id)
+                ->exists();
+
+            if (!$hasItems) {
+                throw ValidationException::withMessages([
+                    'purchase_request' => 'Add at least one requested material before submitting for approval.',
+                ]);
+            }
+
+            $lockedRequest->update([
+                'status' => PurchaseRequest::STATUS_SUBMITTED,
+                'submitted_by' => auth()->id(),
+                'submitted_at' => now(),
+            ]);
+        }, 3);
+
+        return redirect()
+            ->route('purchase-requests.edit', $purchaseRequest)
+            ->with('success', 'Purchase request was submitted for approval.');
     }
 
     public function destroyItem(
