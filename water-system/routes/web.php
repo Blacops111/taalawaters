@@ -120,6 +120,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/purchase-requests/{purchaseRequest}/submit', [PurchaseRequestController::class, 'submit'])
         ->name('purchase-requests.submit');
 
+    Route::post('/purchase-requests/{purchaseRequest}/approve', [PurchaseRequestController::class, 'approve'])
+        ->name('purchase-requests.approve');
+
+    Route::post('/purchase-requests/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])
+        ->name('purchase-requests.reject');
+
     Route::delete('/purchase-requests/{purchaseRequest}/items/{purchaseRequestItem}', [PurchaseRequestController::class, 'destroyItem'])
         ->name('purchase-requests.items.destroy');
 
