@@ -89,7 +89,7 @@
         }
 
         .taala-stat-label {
-            font-size: .78rem;
+            font-size: .76rem;
             text-transform: uppercase;
             letter-spacing: .055em;
             color: #71828a;
@@ -98,9 +98,15 @@
 
         .taala-stat-value {
             color: #18313f;
-            font-size: 1.65rem;
+            font-size: 1.55rem;
             font-weight: 700;
             margin-top: .35rem;
+        }
+
+        .taala-stat-help {
+            margin-top: .25rem;
+            color: #7b8d95;
+            font-size: .78rem;
         }
 
         .taala-panel .card-header {
@@ -147,41 +153,59 @@
         </div>
     </section>
 
-    <h4 class="taala-section-title">Business Overview</h4>
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-3">
+        <div>
+            <h4 class="taala-section-title mb-1">V2 Business Overview</h4>
+            <div class="text-muted small">Live figures from the V2 inventory ledger and completed V2 sales only.</div>
+        </div>
+    </div>
 
     <div class="row g-3 mb-4">
         <div class="col-md-6 col-xl">
             <div class="taala-stat-card p-3" style="--stat-accent:#167ca5;">
-                <div class="taala-stat-label">Total Products</div>
-                <div class="taala-stat-value">{{ number_format($totalProducts) }}</div>
+                <div class="taala-stat-label">Active Inventory Items</div>
+                <div class="taala-stat-value">{{ number_format($activeInventoryItems) }}</div>
+                <div class="taala-stat-help">V2 SKU master</div>
             </div>
         </div>
 
         <div class="col-md-6 col-xl">
             <div class="taala-stat-card p-3" style="--stat-accent:#2d8796;">
-                <div class="taala-stat-label">Total Stock</div>
-                <div class="taala-stat-value">{{ number_format($totalStock) }}</div>
+                <div class="taala-stat-label">Raw Water Balance</div>
+                <div class="taala-stat-value">{{ number_format($rawWaterBalance, 3) }} L</div>
+                <div class="taala-stat-help">Meter-backed ledger balance</div>
             </div>
         </div>
 
         <div class="col-md-6 col-xl">
             <div class="taala-stat-card p-3" style="--stat-accent:#4ca7ba;">
-                <div class="taala-stat-label">Total Sales</div>
-                <div class="taala-stat-value">{{ number_format($totalSales) }}</div>
+                <div class="taala-stat-label">Finished Units On Hand</div>
+                <div class="taala-stat-value">{{ number_format($finishedUnitsOnHand, 0) }}</div>
+                <div class="taala-stat-help">Finished-product ledger stock</div>
             </div>
         </div>
 
         <div class="col-md-6 col-xl">
             <div class="taala-stat-card p-3" style="--stat-accent:#0b4f78;">
-                <div class="taala-stat-label">Total Revenue</div>
-                <div class="taala-stat-value">KES {{ number_format($totalRevenue, 2) }}</div>
+                <div class="taala-stat-label">Completed V2 Sales</div>
+                <div class="taala-stat-value">{{ number_format($completedSales) }}</div>
+                <div class="taala-stat-help">Reversed sales excluded</div>
             </div>
         </div>
 
         <div class="col-md-6 col-xl">
             <div class="taala-stat-card p-3" style="--stat-accent:#3d9a89;">
-                <div class="taala-stat-label">Total Profit</div>
-                <div class="taala-stat-value">KES {{ number_format($totalProfit, 2) }}</div>
+                <div class="taala-stat-label">V2 Sales Revenue</div>
+                <div class="taala-stat-value">KES {{ number_format($salesRevenue, 2) }}</div>
+                <div class="taala-stat-help">Completed non-reversed sales</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl">
+            <div class="taala-stat-card p-3" style="--stat-accent:#c17a35;">
+                <div class="taala-stat-label">Low Stock Items</div>
+                <div class="taala-stat-value">{{ number_format($lowStockItems->count()) }}</div>
+                <div class="taala-stat-help">Based on V2 reorder levels</div>
             </div>
         </div>
     </div>
@@ -189,7 +213,7 @@
     <div class="row g-4 mb-4">
         <div class="col-xl-8">
             <div class="card taala-panel h-100">
-                <div class="card-header">Sales Trend</div>
+                <div class="card-header">V2 Sales Revenue Trend</div>
                 <div class="card-body">
                     <div style="height: 320px;">
                         <canvas id="salesChart"></canvas>
@@ -200,7 +224,7 @@
 
         <div class="col-xl-4">
             <div class="card taala-panel h-100">
-                <div class="card-header">Product Sales Distribution</div>
+                <div class="card-header">V2 Units Sold by Product</div>
                 <div class="card-body">
                     <div style="height: 320px;">
                         <canvas id="productPieChart"></canvas>
@@ -213,34 +237,10 @@
     <div class="row g-4 mb-4">
         <div class="col-xl-7">
             <div class="card taala-panel h-100">
-                <div class="card-header">Stock Levels per Product</div>
+                <div class="card-header">Finished Product Stock</div>
                 <div class="card-body">
-                    <div style="height: 300px;">
-                        <canvas id="stockBarChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-5">
-            <div class="card taala-panel h-100">
-                <div class="card-header">Monthly Profit Trend</div>
-                <div class="card-body">
-                    <div style="height: 300px;">
-                        <canvas id="profitChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 mb-4">
-        <div class="col-xl-7">
-            <div class="card taala-panel">
-                <div class="card-header">Monthly Profit Overview</div>
-                <div class="card-body">
-                    <div style="height: 290px;">
-                        <canvas id="monthlyProfitChart"></canvas>
+                    <div style="height: 320px;">
+                        <canvas id="finishedStockChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -250,19 +250,24 @@
             <div class="card taala-panel h-100">
                 <div class="card-header">Inventory Attention</div>
                 <div class="card-body">
-                    @if($lowStockProducts->count() > 0)
-                        <div class="alert alert-danger mb-0">
-                            <div class="fw-bold mb-3">Low Stock Alerts</div>
-                            @foreach($lowStockProducts as $stock)
+                    @if($lowStockItems->count() > 0)
+                        <div class="alert alert-warning mb-0">
+                            <div class="fw-bold mb-3">Items at or below reorder level</div>
+                            @foreach($lowStockItems as $item)
                                 <div class="d-flex justify-content-between align-items-center gap-3 py-2 border-bottom">
-                                    <span>{{ $stock->product->name }}</span>
-                                    <span class="badge bg-danger">{{ $stock->quantity_remaining }} remaining</span>
+                                    <div>
+                                        <div class="fw-semibold">{{ $item->name }}</div>
+                                        <div class="small text-muted">{{ $item->sku }}</div>
+                                    </div>
+                                    <span class="badge bg-warning text-dark">
+                                        {{ number_format((float) ($item->stock_balance ?? 0), 3) }} {{ $item->unit }}
+                                    </span>
                                 </div>
                             @endforeach
                         </div>
                     @else
                         <div class="alert alert-success mb-0">
-                            All monitored stock levels are currently above the low-stock threshold.
+                            All V2 inventory items with configured reorder levels are currently above their thresholds.
                         </div>
                     @endif
                 </div>
@@ -284,10 +289,10 @@ document.addEventListener('DOMContentLoaded', function () {
         new Chart(salesCtx, {
             type: 'line',
             data: {
-                labels: {!! json_encode($dates->toArray()) !!},
+                labels: @json($salesDates),
                 datasets: [{
-                    label: 'Daily Revenue',
-                    data: {!! json_encode($totals->toArray()) !!},
+                    label: 'Completed V2 Revenue (KES)',
+                    data: @json($salesTotals),
                     borderColor: brandBlue,
                     backgroundColor: 'rgba(22, 124, 165, 0.10)',
                     fill: true,
@@ -312,9 +317,9 @@ document.addEventListener('DOMContentLoaded', function () {
         new Chart(pieCtx, {
             type: 'doughnut',
             data: {
-                labels: {!! json_encode($productNames->toArray() ?? []) !!},
+                labels: @json($productNames),
                 datasets: [{
-                    data: {!! json_encode($productQuantities->toArray() ?? []) !!},
+                    data: @json($productQuantities),
                     backgroundColor: [brandBlue, brandTeal, deepBlue, aqua, '#91cdd5', '#4d98ad']
                 }]
             },
@@ -327,68 +332,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const barCtx = document.getElementById('stockBarChart');
-    if (barCtx) {
-        new Chart(barCtx, {
+    const stockCtx = document.getElementById('finishedStockChart');
+    if (stockCtx) {
+        new Chart(stockCtx, {
             type: 'bar',
             data: {
-                labels: {!! json_encode($stockLabels ?? []) !!},
+                labels: @json($finishedStockLabels),
                 datasets: [{
-                    label: 'Stock Quantity',
-                    data: @json($stockData),
-                    backgroundColor: @json($stockColors),
+                    label: 'Finished Units On Hand',
+                    data: @json($finishedStockData),
+                    backgroundColor: [brandBlue, brandTeal, deepBlue, aqua],
                     borderWidth: 0,
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: gridColor } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    }
-
-    const profitCtx = document.getElementById('profitChart');
-    if (profitCtx) {
-        new Chart(profitCtx, {
-            type: 'line',
-            data: {
-                labels: @json($profitLabels),
-                datasets: [{
-                    label: 'Monthly Profit (KES)',
-                    data: @json($profitData),
-                    borderColor: brandTeal,
-                    backgroundColor: 'rgba(45, 135, 150, 0.10)',
-                    fill: true,
-                    borderWidth: 2,
-                    tension: 0.35
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: gridColor } },
-                    x: { grid: { display: false } }
-                }
-            }
-        });
-    }
-
-    const monthlyCtx = document.getElementById('monthlyProfitChart');
-    if (monthlyCtx) {
-        new Chart(monthlyCtx, {
-            type: 'bar',
-            data: {
-                labels: @json($months),
-                datasets: [{
-                    label: 'Monthly Profit',
-                    data: @json($profits),
-                    backgroundColor: [brandBlue, brandTeal, deepBlue, aqua, '#91cdd5', '#4d98ad'],
                     borderRadius: 6
                 }]
             },
