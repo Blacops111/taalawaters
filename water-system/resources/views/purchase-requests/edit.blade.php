@@ -53,6 +53,25 @@
                             <dd class="col-7">{{ $purchaseRequest->submitted_at->format('Y-m-d H:i') }}</dd>
                         @endif
 
+                        @if($purchaseRequest->approved_at)
+                            <dt class="col-5">Approved By</dt>
+                            <dd class="col-7">{{ $purchaseRequest->approver?->name ?: '—' }}</dd>
+
+                            <dt class="col-5">Approved At</dt>
+                            <dd class="col-7">{{ $purchaseRequest->approved_at->format('Y-m-d H:i') }}</dd>
+                        @endif
+
+                        @if($purchaseRequest->rejected_at)
+                            <dt class="col-5">Rejected By</dt>
+                            <dd class="col-7">{{ $purchaseRequest->rejector?->name ?: '—' }}</dd>
+
+                            <dt class="col-5">Rejected At</dt>
+                            <dd class="col-7">{{ $purchaseRequest->rejected_at->format('Y-m-d H:i') }}</dd>
+
+                            <dt class="col-5">Reason</dt>
+                            <dd class="col-7">{{ $purchaseRequest->rejection_reason ?: '—' }}</dd>
+                        @endif
+
                         <dt class="col-5">Notes</dt>
                         <dd class="col-7">{{ $purchaseRequest->notes ?: '—' }}</dd>
                     </dl>
@@ -222,8 +241,97 @@
                 @endif
             @endif
 
+            @if($purchaseRequest->status === 'submitted')
+                <div class="row g-4 mt-1">
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="mb-2">Approve Purchase Request</h5>
+                                <p class="text-muted">
+                                    Select the supplier that will fulfill this approved request.
+                                </p>
+
+                                <form
+                                    method="POST"
+                                    action="{{ route('purchase-requests.approve', $purchaseRequest) }}"
+                                    onsubmit="return confirm('Approve this purchase request? Inventory will not change until goods are received.');"
+                                >
+                                    @csrf
+
+                                    <div class="mb-3">
+                                        <label for="supplier_id" class="form-label">Supplier</label>
+                                        <select
+                                            id="supplier_id"
+                                            name="supplier_id"
+                                            class="form-select @error('supplier_id') is-invalid @enderror"
+                                            required
+                                        >
+                                            <option value="">Select supplier</option>
+                                            @foreach($reviewSuppliers as $supplier)
+                                                <option
+                                                    value="{{ $supplier->id }}"
+                                                    @selected((string) old('supplier_id', $purchaseRequest->supplier_id) === (string) $supplier->id)
+                                                >
+                                                    {{ $supplier->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('supplier_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success">
+                                        Approve Purchase Request
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="mb-2">Reject Purchase Request</h5>
+                                <p class="text-muted">
+                                    A rejection reason is required for the audit trail.
+                                </p>
+
+                                <form
+                                    method="POST"
+                                    action="{{ route('purchase-requests.reject', $purchaseRequest) }}"
+                                    onsubmit="return confirm('Reject this purchase request?');"
+                                >
+                                    @csrf
+
+                                    <div class="mb-3">
+                                        <label for="rejection_reason" class="form-label">Reason</label>
+                                        <textarea
+                                            id="rejection_reason"
+                                            name="rejection_reason"
+                                            rows="4"
+                                            maxlength="2000"
+                                            class="form-control @error('rejection_reason') is-invalid @enderror"
+                                            required
+                                        >{{ old('rejection_reason') }}</textarea>
+                                        @error('rejection_reason')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        Reject Purchase Request
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="alert alert-info mt-4 mb-0">
-                Adding, removing, or submitting requested items does <strong>not</strong> change inventory stock.
+                Creating, editing, submitting, approving, or rejecting a purchase request does <strong>not</strong> change inventory stock.
+                Stock will change only when received goods are recorded.
             </div>
         </div>
     </div>
