@@ -6,6 +6,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionRecipeController;
 use App\Http\Controllers\ProductionRunController;
+use App\Http\Controllers\PurchaseReceiptController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SaleController;
@@ -125,6 +126,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::post('/purchase-requests/{purchaseRequest}/reject', [PurchaseRequestController::class, 'reject'])
         ->name('purchase-requests.reject');
+
+    Route::get('/purchase-requests/{purchaseRequest}/receive', [PurchaseReceiptController::class, 'create'])
+        ->name('purchase-requests.receipts.create');
+
+    Route::post('/purchase-requests/{purchaseRequest}/receive', [PurchaseReceiptController::class, 'store'])
+        ->name('purchase-requests.receipts.store');
 
     Route::delete('/purchase-requests/{purchaseRequest}/items/{purchaseRequestItem}', [PurchaseRequestController::class, 'destroyItem'])
         ->name('purchase-requests.items.destroy');
