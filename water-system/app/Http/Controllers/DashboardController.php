@@ -2,123 +2,107 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use App\Models\Sale;
-use App\Models\Stock;
-use Carbon\Carbon;
+use App\Models\InventoryItem;
+use App\Models\SalesOrder;
+use App\Models\SalesOrderItem;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        $totalProducts = Product::count();
-        $totalStock = Stock::sum('quantity_remaining');
-        $totalSales = Sale::count();
-        $totalRevenue = Sale::sum('total_amount');
+        $activeInventoryItems = InventoryItem::query()
+            ->where('is_active', true)
+            ->count();
 
-        $profitSummary = DB::table('sales')
-            ->join('products', 'sales.product_id', '=', 'products.id')
-            ->selectRaw(
-                'COALESCE(SUM((sales.price - products.cost_price) * sales.quantity_sold), 0) as total_profit'
+        $rawWaterBalance = (float) InventoryItem::query()
+            ->where('is_active', true)
+            ->where('category', 'raw_water')
+            ->withSum('stockMovements as stock_balance', 'quantity_delta')
+            ->get()
+            ->sum(fn ($item) => (float) ($item->stock_balance ?? 0));
+
+        $finishedProducts = InventoryItem::query()
+            ->where('is_active', true)
+            ->where('category', 'finished_product')
+            ->withSum('stockMovements as stock_balance', 'quantity_delta')
+            ->orderBy('name')
+            ->get();
+
+        $finishedUnitsOnHand = $finishedProducts
+            ->sum(fn ($item) => (float) ($item->stock_balance ?? 0));
+
+        $completedSalesQuery = SalesOrder::query()
+            ->where('status', SalesOrder::STATUS_COMPLETED);
+
+        $completedSales = (clone $completedSalesQuery)->count();
+        $salesRevenue = (float) (clone $completedSalesQuery)->sum('total_amount');
+
+        $lowStockItems = InventoryItem::query()
+            ->where('is_active', true)
+            ->where('category', '!=', 'raw_water')
+            ->where('reorder_level', '>', 0)
+            ->withSum('stockMovements as stock_balance', 'quantity_delta')
+            ->whereRaw(
+                '(SELECT COALESCE(SUM(stock_movements.quantity_delta), 0) '
+                .'FROM stock_movements '
+                .'WHERE stock_movements.inventory_item_id = inventory_items.id) '
+                .'<= inventory_items.reorder_level'
             )
-            ->first();
-
-        $totalProfit = (float) ($profitSummary->total_profit ?? 0);
-
-        // SUBSTR works with both the MySQL production database and the
-        // SQLite in-memory database used by the automated test suite.
-        $monthlyProfitRows = DB::table('sales')
-            ->join('products', 'sales.product_id', '=', 'products.id')
-            ->selectRaw('SUBSTR(sales.sale_date, 1, 7) as month_key')
-            ->selectRaw(
-                'SUM((sales.price - products.cost_price) * sales.quantity_sold) as total_profit'
-            )
-            ->groupByRaw('SUBSTR(sales.sale_date, 1, 7)')
-            ->orderByRaw('SUBSTR(sales.sale_date, 1, 7)')
+            ->orderBy('category')
+            ->orderBy('name')
             ->get();
 
-        $profitLabels = $monthlyProfitRows->map(function ($row) {
-            return Carbon::createFromFormat('Y-m-d', $row->month_key.'-01')
-                ->format('M Y');
-        });
-
-        $profitData = $monthlyProfitRows->map(function ($row) {
-            return (float) $row->total_profit;
-        });
-
-        $salesData = Sale::select(
-                'sale_date as date',
-                DB::raw('SUM(total_amount) as total')
-            )
-            ->groupBy('sale_date')
-            ->orderBy('sale_date')
+        $salesTrend = SalesOrder::query()
+            ->where('status', SalesOrder::STATUS_COMPLETED)
+            ->selectRaw('DATE(sale_at) as sale_date')
+            ->selectRaw('SUM(total_amount) as total_revenue')
+            ->groupByRaw('DATE(sale_at)')
+            ->orderByRaw('DATE(sale_at)')
             ->get();
 
-        $dates = $salesData->pluck('date');
-        $totals = $salesData->pluck('total');
+        $salesDates = $salesTrend->pluck('sale_date')->values();
+        $salesTotals = $salesTrend
+            ->map(fn ($row) => (float) $row->total_revenue)
+            ->values();
 
-        $productSales = DB::table('sales')
-            ->join('products', 'sales.product_id', '=', 'products.id')
-            ->select('products.id', 'products.name')
-            ->selectRaw('SUM(sales.quantity_sold) as total_qty')
-            ->groupBy('products.id', 'products.name')
-            ->orderBy('products.name')
+        $productSales = SalesOrderItem::query()
+            ->join('sales_orders', 'sales_order_items.sales_order_id', '=', 'sales_orders.id')
+            ->join('inventory_items', 'sales_order_items.inventory_item_id', '=', 'inventory_items.id')
+            ->where('sales_orders.status', SalesOrder::STATUS_COMPLETED)
+            ->select([
+                'inventory_items.id',
+                'inventory_items.name',
+            ])
+            ->selectRaw('SUM(sales_order_items.quantity) as units_sold')
+            ->groupBy('inventory_items.id', 'inventory_items.name')
+            ->orderByDesc('units_sold')
+            ->orderBy('inventory_items.name')
             ->get();
 
-        $productNames = $productSales->pluck('name');
-        $productQuantities = $productSales->pluck('total_qty');
+        $productNames = $productSales->pluck('name')->values();
+        $productQuantities = $productSales
+            ->map(fn ($row) => (float) $row->units_sold)
+            ->values();
 
-        $stocks = Stock::with('product')
-            ->select('product_id')
-            ->selectRaw('SUM(quantity_remaining) as quantity_remaining')
-            ->groupBy('product_id')
-            ->get();
-
-        $stockLabels = [];
-        $stockData = [];
-        $stockColors = [];
-
-        foreach ($stocks as $stock) {
-            $stockLabels[] = $stock->product->name ?? 'Unknown';
-            $stockData[] = (int) $stock->quantity_remaining;
-
-            if ($stock->quantity_remaining < 10) {
-                $stockColors[] = 'rgba(255, 99, 132, 0.8)';
-            } else {
-                $stockColors[] = 'rgba(54, 162, 235, 0.8)';
-            }
-        }
-
-        $monthlyProfits = $monthlyProfitRows;
-        $months = $profitLabels->values()->all();
-        $profits = $profitData->values()->all();
-
-        $lowStockProducts = $stocks
-            ->filter(function ($stock) {
-                return $stock->quantity_remaining < 10;
-            })
+        $finishedStockLabels = $finishedProducts->pluck('name')->values();
+        $finishedStockData = $finishedProducts
+            ->map(fn ($item) => (float) ($item->stock_balance ?? 0))
             ->values();
 
         return view('dashboard', compact(
-            'totalProducts',
-            'totalStock',
-            'totalSales',
-            'totalRevenue',
-            'totalProfit',
-            'profitLabels',
-            'profitData',
-            'dates',
-            'totals',
+            'activeInventoryItems',
+            'rawWaterBalance',
+            'finishedUnitsOnHand',
+            'completedSales',
+            'salesRevenue',
+            'lowStockItems',
+            'salesDates',
+            'salesTotals',
             'productNames',
             'productQuantities',
-            'stockLabels',
-            'stockData',
-            'stockColors',
-            'lowStockProducts',
-            'monthlyProfits',
-            'months',
-            'profits'
+            'finishedStockLabels',
+            'finishedStockData',
         ));
     }
 }
