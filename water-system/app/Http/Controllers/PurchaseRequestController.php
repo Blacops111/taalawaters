@@ -90,18 +90,32 @@ class PurchaseRequestController extends Controller
             'supplier:id,name,is_active',
             'requester:id,name',
             'submitter:id,name',
+            'approver:id,name',
+            'rejector:id,name',
             'items.inventoryItem:id,sku,name,category,unit',
         ]);
 
-        $purchasableItems = InventoryItem::query()
-            ->where('is_active', true)
-            ->whereNotIn('category', ['raw_water', 'finished_product'])
-            ->orderBy('name')
-            ->get(['id', 'sku', 'name', 'category', 'unit']);
+        $purchasableItems = collect();
+        $reviewSuppliers = collect();
+
+        if ($purchaseRequest->status === PurchaseRequest::STATUS_DRAFT) {
+            $purchasableItems = InventoryItem::query()
+                ->where('is_active', true)
+                ->whereNotIn('category', ['raw_water', 'finished_product'])
+                ->orderBy('name')
+                ->get(['id', 'sku', 'name', 'category', 'unit']);
+        }
+
+        if ($purchaseRequest->status === PurchaseRequest::STATUS_SUBMITTED) {
+            $reviewSuppliers = Supplier::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
 
         return view(
             'purchase-requests.edit',
-            compact('purchaseRequest', 'purchasableItems')
+            compact('purchaseRequest', 'purchasableItems', 'reviewSuppliers')
         );
     }
 
@@ -184,6 +198,85 @@ class PurchaseRequestController extends Controller
             ->with('success', 'Purchase request was submitted for approval.');
     }
 
+    public function approve(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $this->ensureSubmitted($purchaseRequest);
+
+        $validated = $request->validate([
+            'supplier_id' => [
+                'required',
+                'integer',
+                Rule::exists('suppliers', 'id')->where(
+                    fn ($query) => $query->where('is_active', true)
+                ),
+            ],
+        ]);
+
+        DB::transaction(function () use ($purchaseRequest, $validated) {
+            $lockedRequest = PurchaseRequest::query()
+                ->whereKey($purchaseRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureSubmitted($lockedRequest);
+
+            $hasItems = PurchaseRequestItem::query()
+                ->where('purchase_request_id', $lockedRequest->id)
+                ->exists();
+
+            if (!$hasItems) {
+                throw ValidationException::withMessages([
+                    'purchase_request' => 'A purchase request must contain at least one material before approval.',
+                ]);
+            }
+
+            $lockedRequest->update([
+                'status' => PurchaseRequest::STATUS_APPROVED,
+                'supplier_id' => $validated['supplier_id'],
+                'approved_by' => auth()->id(),
+                'approved_at' => now(),
+                'rejected_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+        }, 3);
+
+        return redirect()
+            ->route('purchase-requests.edit', $purchaseRequest)
+            ->with('success', 'Purchase request was approved. Inventory will change only when goods are received.');
+    }
+
+    public function reject(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $this->ensureSubmitted($purchaseRequest);
+
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:2000'],
+        ]);
+
+        DB::transaction(function () use ($purchaseRequest, $validated) {
+            $lockedRequest = PurchaseRequest::query()
+                ->whereKey($purchaseRequest->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureSubmitted($lockedRequest);
+
+            $lockedRequest->update([
+                'status' => PurchaseRequest::STATUS_REJECTED,
+                'approved_by' => null,
+                'approved_at' => null,
+                'rejected_by' => auth()->id(),
+                'rejected_at' => now(),
+                'rejection_reason' => trim($validated['rejection_reason']),
+            ]);
+        }, 3);
+
+        return redirect()
+            ->route('purchase-requests.edit', $purchaseRequest)
+            ->with('success', 'Purchase request was rejected.');
+    }
+
     public function destroyItem(
         PurchaseRequest $purchaseRequest,
         PurchaseRequestItem $purchaseRequestItem
@@ -214,6 +307,15 @@ class PurchaseRequestController extends Controller
         if ($purchaseRequest->status !== PurchaseRequest::STATUS_DRAFT) {
             throw ValidationException::withMessages([
                 'purchase_request' => 'Only draft purchase requests can be changed.',
+            ]);
+        }
+    }
+
+    private function ensureSubmitted(PurchaseRequest $purchaseRequest): void
+    {
+        if ($purchaseRequest->status !== PurchaseRequest::STATUS_SUBMITTED) {
+            throw ValidationException::withMessages([
+                'purchase_request' => 'Only submitted purchase requests can be approved or rejected.',
             ]);
         }
     }
