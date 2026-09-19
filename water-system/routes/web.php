@@ -117,6 +117,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/purchase-requests/{purchaseRequest}/items', [PurchaseRequestController::class, 'storeItem'])
         ->name('purchase-requests.items.store');
 
+    Route::post('/purchase-requests/{purchaseRequest}/submit', [PurchaseRequestController::class, 'submit'])
+        ->name('purchase-requests.submit');
+
     Route::delete('/purchase-requests/{purchaseRequest}/items/{purchaseRequestItem}', [PurchaseRequestController::class, 'destroyItem'])
         ->name('purchase-requests.items.destroy');
 
