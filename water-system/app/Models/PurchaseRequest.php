@@ -68,4 +68,9 @@ class PurchaseRequest extends Model
     {
         return $this->hasMany(PurchaseRequestItem::class);
     }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(PurchaseReceipt::class);
+    }
 }
