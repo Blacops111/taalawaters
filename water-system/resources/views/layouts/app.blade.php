@@ -123,11 +123,9 @@
                     <a href="{{ route('dashboard') }}" class="taala-nav-link">Dashboard</a>
                     <a href="{{ route('inventory.index') }}" class="taala-nav-link">Inventory</a>
                     <a href="{{ route('production.runs.create') }}" class="taala-nav-link">Production</a>
-                    <a href="{{ route('customers.index') }}" class="taala-nav-link">Business Customers</a>
-                    <a href="{{ route('sales-orders.create') }}" class="taala-nav-link">V2 Sales</a>
-                    <a href="{{ route('products.index') }}" class="taala-nav-link">Products</a>
-                    <a href="{{ route('stocks.index') }}" class="taala-nav-link">Stocks</a>
-                    <a href="{{ route('sales.index') }}" class="taala-nav-link">Sales</a>
+                    <a href="{{ route('customers.index') }}" class="taala-nav-link">Customers</a>
+                    <a href="{{ route('sales-orders.create') }}" class="taala-nav-link">Sales</a>
+                    <a href="{{ route('suppliers.index') }}" class="taala-nav-link">Suppliers</a>
                 </div>
 
                 @auth
