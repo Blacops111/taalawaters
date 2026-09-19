@@ -11,6 +11,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesPricingController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TruckController;
 use Illuminate\Support\Facades\Route;
 
@@ -97,6 +98,22 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::put('/customers/{customer}', [CustomerController::class, 'update'])
         ->name('customers.update');
+
+
+    Route::get('/suppliers', [SupplierController::class, 'index'])
+        ->name('suppliers.index');
+
+    Route::get('/suppliers/create', [SupplierController::class, 'create'])
+        ->name('suppliers.create');
+
+    Route::post('/suppliers', [SupplierController::class, 'store'])
+        ->name('suppliers.store');
+
+    Route::get('/suppliers/{supplier}/edit', [SupplierController::class, 'edit'])
+        ->name('suppliers.edit');
+
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])
+        ->name('suppliers.update');
 
     Route::get('/sales-orders/history', [SalesOrderController::class, 'history'])
         ->name('sales-orders.history');
