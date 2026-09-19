@@ -19,6 +19,8 @@ class PurchaseRequest extends Model
         'supplier_id',
         'requested_by',
         'requested_at',
+        'submitted_by',
+        'submitted_at',
         'approved_by',
         'approved_at',
         'rejection_reason',
@@ -29,6 +31,7 @@ class PurchaseRequest extends Model
     {
         return [
             'requested_at' => 'datetime',
+            'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
         ];
     }
@@ -41,6 +44,11 @@ class PurchaseRequest extends Model
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function submitter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 
     public function approver(): BelongsTo
