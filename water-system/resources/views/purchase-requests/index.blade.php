@@ -32,6 +32,7 @@
                             <th>Items</th>
                             <th>Status</th>
                             <th>Notes</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,10 +62,18 @@
                                     @endswitch
                                 </td>
                                 <td>{{ $purchaseRequest->notes ?: '—' }}</td>
+                                <td class="text-end">
+                                    <a
+                                        href="{{ route('purchase-requests.edit', $purchaseRequest) }}"
+                                        class="btn btn-sm btn-outline-primary"
+                                    >
+                                        {{ $purchaseRequest->status === AppModelsPurchaseRequest::STATUS_DRAFT ? 'Manage Items' : 'View' }}
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-5">
+                                <td colspan="8" class="text-center text-muted py-5">
                                     No purchase requests have been created yet.
                                 </td>
                             </tr>
