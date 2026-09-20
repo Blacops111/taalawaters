@@ -129,6 +129,7 @@
                     <a href="{{ route('suppliers.index') }}" class="taala-nav-link">Suppliers</a>
                     <a href="{{ route('drivers.index') }}" class="taala-nav-link">Drivers</a>
                     <a href="{{ route('vehicles.index') }}" class="taala-nav-link">Vehicles</a>
+                    <a href="{{ route('vehicle-assignments.index') }}" class="taala-nav-link">Assignments</a>
                 </div>
 
                 @auth
