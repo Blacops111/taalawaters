@@ -60,10 +60,10 @@ class DeliveryNoteDispatchTest extends TestCase
         $this->assertSame(DeliveryNote::STATUS_DISPATCHED, $deliveryNote->status);
         $this->assertSame($assignment->id, $deliveryNote->vehicle_assignment_id);
         $this->assertNotNull($deliveryNote->dispatched_at);
-        $this->assertNotNull($deliveryNote->confirmation_code_hash);
-        $this->assertNotNull($deliveryNote->confirmation_code_generated_at);
-        $this->assertNotNull($deliveryNote->confirmation_code_expires_at);
-        $this->assertSame(0, $deliveryNote->confirmation_code_failed_attempts);
+        $this->assertNull($deliveryNote->confirmation_code_hash);
+        $this->assertNull($deliveryNote->confirmation_code_generated_at);
+        $this->assertNull($deliveryNote->confirmation_code_expires_at);
+        Queue::assertNothingPushed();
     }
 
     public function test_dispatch_requires_recipient_contact_method(): void
@@ -96,6 +96,42 @@ class DeliveryNoteDispatchTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('delivery-notes.dispatch.store', $deliveryNote), [])
+            ->assertSessionHasErrors('vehicle_assignment_id');
+
+        $this->assertSame(
+            DeliveryNote::STATUS_DRAFT,
+            $deliveryNote->fresh()->status
+        );
+    }
+
+    public function test_unlinked_driver_account_cannot_dispatch_delivery_note(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [, $deliveryNote] = $this->draftDeliveryNote($admin);
+
+        $driver = Driver::create([
+            'name' => 'Unlinked Dispatch Driver',
+            'is_active' => true,
+        ]);
+
+        $vehicle = Vehicle::create([
+            'registration_number' => 'KME 409U',
+            'vehicle_type' => Vehicle::TYPE_MOTORBIKE,
+            'status' => Vehicle::STATUS_ASSIGNED,
+            'is_active' => true,
+        ]);
+
+        $assignment = VehicleAssignment::create([
+            'driver_id' => $driver->id,
+            'vehicle_id' => $vehicle->id,
+            'assigned_by' => $admin->id,
+            'assigned_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('delivery-notes.dispatch.store', $deliveryNote), [
+                'vehicle_assignment_id' => $assignment->id,
+            ])
             ->assertSessionHasErrors('vehicle_assignment_id');
 
         $this->assertSame(
@@ -262,7 +298,12 @@ class DeliveryNoteDispatchTest extends TestCase
         User $admin,
         string $registration = 'KME 400D',
     ): VehicleAssignment {
+        $driverUser = User::factory()->create([
+            'role' => 'driver',
+        ]);
+
         $driver = Driver::create([
+            'user_id' => $driverUser->id,
             'name' => 'Dispatch Driver '.uniqid(),
             'is_active' => true,
         ]);
