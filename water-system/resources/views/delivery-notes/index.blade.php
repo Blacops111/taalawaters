@@ -72,13 +72,13 @@
                                 </td>
                                 <td>
                                     @switch($deliveryNote->status)
-                                        @case(AppModelsDeliveryNote::STATUS_DRAFT)
+                                        @case(\App\Models\DeliveryNote::STATUS_DRAFT)
                                             <span class="badge bg-secondary">Draft</span>
                                             @break
-                                        @case(AppModelsDeliveryNote::STATUS_DISPATCHED)
+                                        @case(\App\Models\DeliveryNote::STATUS_DISPATCHED)
                                             <span class="badge bg-info text-dark">Dispatched</span>
                                             @break
-                                        @case(AppModelsDeliveryNote::STATUS_DELIVERED)
+                                        @case(\App\Models\DeliveryNote::STATUS_DELIVERED)
                                             <span class="badge bg-success">Delivered</span>
                                             @break
                                         @default
@@ -127,7 +127,7 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    @if($deliveryNote->status === AppModelsDeliveryNote::STATUS_DRAFT)
+                                    @if($deliveryNote->status === \App\Models\DeliveryNote::STATUS_DRAFT)
                                         <a
                                             href="{{ route('delivery-notes.dispatch', $deliveryNote) }}"
                                             class="btn btn-sm btn-outline-primary"
