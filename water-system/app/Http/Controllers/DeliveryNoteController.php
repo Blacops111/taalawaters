@@ -1,0 +1,106 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\DeliveryNote;
+use App\Models\DeliveryNoteItem;
+use App\Models\SalesOrder;
+use App\Models\Vehicle;
+use App\Models\VehicleAssignment;
+use App\Services\DeliveryNoteDraftService;
+use Illuminate\Http\Request;
+
+class DeliveryNoteController extends Controller
+{
+    public function create(SalesOrder $salesOrder)
+    {
+        if ($salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
+            abort(404);
+        }
+
+        $salesOrder->load([
+            'customer',
+            'items.inventoryItem',
+        ]);
+
+        $alreadyAllocated = DeliveryNoteItem::query()
+            ->join('delivery_notes', 'delivery_note_items.delivery_note_id', '=', 'delivery_notes.id')
+            ->where('delivery_notes.sales_order_id', $salesOrder->id)
+            ->where('delivery_notes.status', '!=', DeliveryNote::STATUS_CANCELLED)
+            ->selectRaw(
+                'delivery_note_items.sales_order_item_id, SUM(delivery_note_items.quantity) as allocated_quantity'
+            )
+            ->groupBy('delivery_note_items.sales_order_item_id')
+            ->pluck('allocated_quantity', 'delivery_note_items.sales_order_item_id');
+
+        $remainingQuantities = $salesOrder->items->mapWithKeys(
+            fn ($item) => [
+                $item->id => max(
+                    0,
+                    (float) $item->quantity - (float) ($alreadyAllocated[$item->id] ?? 0)
+                ),
+            ]
+        );
+
+        $activeAssignments = VehicleAssignment::query()
+            ->whereNull('unassigned_at')
+            ->whereHas('driver', fn ($query) => $query->where('is_active', true))
+            ->whereHas('vehicle', fn ($query) => $query
+                ->where('is_active', true)
+                ->where('status', Vehicle::STATUS_ASSIGNED))
+            ->with(['driver', 'vehicle'])
+            ->latest('assigned_at')
+            ->get();
+
+        return view('delivery-notes.create', compact(
+            'salesOrder',
+            'remainingQuantities',
+            'activeAssignments',
+        ));
+    }
+
+    public function store(
+        Request $request,
+        SalesOrder $salesOrder,
+        DeliveryNoteDraftService $service,
+    ) {
+        $validated = $request->validate([
+            'vehicle_assignment_id' => [
+                'nullable',
+                'integer',
+                'exists:vehicle_assignments,id',
+            ],
+            'delivery_address' => ['nullable', 'string', 'max:2000'],
+            'scheduled_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'quantities' => ['required', 'array'],
+            'quantities.*' => [
+                'nullable',
+                'integer',
+                'min:0',
+                'max:999999999',
+            ],
+        ]);
+
+        $assignment = isset($validated['vehicle_assignment_id'])
+            ? VehicleAssignment::findOrFail($validated['vehicle_assignment_id'])
+            : null;
+
+        $deliveryNote = $service->create(
+            $salesOrder,
+            $assignment,
+            $request->user(),
+            $validated['quantities'],
+            $validated['delivery_address'] ?? null,
+            $validated['scheduled_at'] ?? null,
+            $validated['notes'] ?? null,
+        );
+
+        return redirect()
+            ->route('sales-orders.show', $salesOrder)
+            ->with(
+                'success',
+                'Draft delivery note '.$deliveryNote->reference.' was created successfully.'
+            );
+    }
+}
