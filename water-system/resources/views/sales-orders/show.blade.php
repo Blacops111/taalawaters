@@ -137,6 +137,7 @@
                             <th>Scheduled</th>
                             <th>Destination</th>
                             <th>Created By</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -144,9 +145,24 @@
                             <tr>
                                 <td><strong>{{ $deliveryNote->reference }}</strong></td>
                                 <td>
-                                    <span class="badge bg-secondary">
-                                        {{ ucfirst($deliveryNote->status) }}
-                                    </span>
+                                    @switch($deliveryNote->status)
+                                        @case(\App\Models\DeliveryNote::STATUS_DRAFT)
+                                            <span class="badge bg-secondary">Draft</span>
+                                            @break
+                                        @case(\App\Models\DeliveryNote::STATUS_DISPATCHED)
+                                            <span class="badge bg-info text-dark">Dispatched</span>
+                                            @if($deliveryNote->dispatched_at)
+                                                <div class="small text-muted mt-1">
+                                                    {{ $deliveryNote->dispatched_at->format('Y-m-d H:i') }}
+                                                </div>
+                                            @endif
+                                            @break
+                                        @case(\App\Models\DeliveryNote::STATUS_DELIVERED)
+                                            <span class="badge bg-success">Delivered</span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-warning text-dark">{{ ucfirst($deliveryNote->status) }}</span>
+                                    @endswitch
                                 </td>
                                 <td>
                                     @if($deliveryNote->vehicleAssignment)
@@ -161,9 +177,24 @@
                                 <td>{{ $deliveryNote->scheduled_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 <td>{{ $deliveryNote->delivery_address ?: '—' }}</td>
                                 <td>{{ $deliveryNote->creator?->name ?? 'System' }}</td>
+                                <td class="text-end">
+                                    @if(
+                                        $deliveryNote->status === \App\Models\DeliveryNote::STATUS_DRAFT
+                                        && $salesOrder->status === \App\Models\SalesOrder::STATUS_COMPLETED
+                                    )
+                                        <a
+                                            href="{{ route('delivery-notes.dispatch', $deliveryNote) }}"
+                                            class="btn btn-sm btn-outline-primary"
+                                        >
+                                            Dispatch
+                                        </a>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
                             </tr>
                             <tr class="table-light">
-                                <td colspan="6">
+                                <td colspan="7">
                                     <div class="small text-muted mb-1">Delivery Items</div>
                                     @foreach($deliveryNote->items as $deliveryItem)
                                         <span class="me-3">
@@ -175,7 +206,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     No delivery notes have been created for this sale.
                                 </td>
                             </tr>
