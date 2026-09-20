@@ -108,7 +108,7 @@ class DriverDeliveryConfirmationTest extends TestCase
         $this->actingAs($driverUser)
             ->get(route('driver.deliveries.confirm', $deliveryNote))
             ->assertOk()
-            ->assertSee('Verify & Mark Delivered');
+            ->assertSeeText('Verify & Mark Delivered');
     }
 
     public function test_incorrect_code_increments_failed_attempts_without_delivering(): void
