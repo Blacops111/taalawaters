@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DeliveryNote;
 use App\Models\InventoryItem;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderItem;
@@ -55,6 +56,19 @@ class SalesOrderReversalService
                 ->exists()) {
                 throw ValidationException::withMessages([
                     'sales_order' => 'This sale has already been reversed.',
+                ]);
+            }
+
+            $activeDeliveryNote = DeliveryNote::query()
+                ->where('sales_order_id', $lockedOrder->id)
+                ->where('status', '!=', DeliveryNote::STATUS_CANCELLED)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($activeDeliveryNote) {
+                throw ValidationException::withMessages([
+                    'sales_order' => 'A sale with a non-cancelled delivery note cannot be reversed.',
                 ]);
             }
 
