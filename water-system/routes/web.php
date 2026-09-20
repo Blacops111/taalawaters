@@ -224,6 +224,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/delivery-notes/{deliveryNote}/dispatch', [DeliveryNoteController::class, 'dispatch'])
         ->name('delivery-notes.dispatch.store');
 
+    Route::post('/delivery-notes/{deliveryNote}/deliver', [DeliveryNoteController::class, 'deliver'])
+        ->name('delivery-notes.deliver');
+
     Route::get('/sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])
         ->name('sales-orders.show');
 
