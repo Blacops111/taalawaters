@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\SendDeliveryConfirmationCode;
 use App\Models\DeliveryNote;
 use App\Models\Driver;
 use App\Models\SalesOrder;
@@ -13,11 +12,6 @@ use Illuminate\Validation\ValidationException;
 
 class DeliveryNoteDispatchService
 {
-    public function __construct(
-        private readonly DeliveryConfirmationCodeService $confirmationCodes,
-    ) {
-    }
-
     public function dispatch(
         DeliveryNote $deliveryNote,
         VehicleAssignment $vehicleAssignment,
@@ -96,13 +90,6 @@ class DeliveryNoteDispatchService
                 'status' => DeliveryNote::STATUS_DISPATCHED,
                 'dispatched_at' => now(),
             ]);
-
-            $code = $this->confirmationCodes->generateFor($lockedNote);
-
-            SendDeliveryConfirmationCode::dispatch(
-                $lockedNote->id,
-                $code,
-            )->afterCommit();
 
             return $lockedNote->fresh([
                 'items.inventoryItem',
