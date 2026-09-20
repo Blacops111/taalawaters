@@ -66,12 +66,33 @@
                                 <td>{{ $deliveryNote->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 <td class="text-end">
                                     @if($deliveryNote->status === 'dispatched')
-                                        <a
-                                            href="{{ route('driver.deliveries.confirm', $deliveryNote) }}"
-                                            class="btn btn-sm btn-primary"
-                                        >
-                                            Enter Code
-                                        </a>
+                                        @php
+                                            $codeActive =
+                                                filled($deliveryNote->confirmation_code_hash)
+                                                && $deliveryNote->confirmation_code_expires_at
+                                                && $deliveryNote->confirmation_code_expires_at->isFuture()
+                                                && $deliveryNote->confirmation_code_locked_at === null;
+                                        @endphp
+
+                                        @if($codeActive)
+                                            <a
+                                                href="{{ route('driver.deliveries.confirm', $deliveryNote) }}"
+                                                class="btn btn-sm btn-primary"
+                                            >
+                                                Enter Code
+                                            </a>
+                                        @else
+                                            <form
+                                                method="POST"
+                                                action="{{ route('driver.deliveries.send-code', $deliveryNote) }}"
+                                                class="d-inline"
+                                            >
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    {{ $deliveryNote->confirmation_code_generated_at ? 'Send New Code' : 'Send Code' }}
+                                                </button>
+                                            </form>
+                                        @endif
                                     @else
                                         <span class="text-muted">Completed</span>
                                     @endif
