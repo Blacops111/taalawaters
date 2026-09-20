@@ -21,6 +21,8 @@ class DeliveryConfirmationCodeService
             'confirmation_code_generated_at' => $generatedAt,
             'confirmation_code_expires_at' => $generatedAt->copy()->addMinutes($ttlMinutes),
             'confirmation_code_last_sent_at' => null,
+            'confirmation_code_sms_sent_at' => null,
+            'confirmation_code_email_sent_at' => null,
             'confirmation_code_failed_attempts' => 0,
             'confirmation_code_locked_at' => null,
             'confirmation_code_verified_at' => null,
