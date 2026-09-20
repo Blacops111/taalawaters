@@ -72,14 +72,25 @@
                                                 && $deliveryNote->confirmation_code_expires_at
                                                 && $deliveryNote->confirmation_code_expires_at->isFuture()
                                                 && $deliveryNote->confirmation_code_locked_at === null;
+
+                                            $notificationAccepted =
+                                                $deliveryNote->confirmation_code_sms_sent_at !== null
+                                                || $deliveryNote->confirmation_code_email_sent_at !== null;
                                         @endphp
 
-                                        @if($codeActive)
+                                        @if($codeActive && $notificationAccepted)
                                             <a
                                                 href="{{ route('driver.deliveries.confirm', $deliveryNote) }}"
                                                 class="btn btn-sm btn-primary"
                                             >
                                                 Enter Code
+                                            </a>
+                                        @elseif($codeActive)
+                                            <a
+                                                href="{{ route('driver.deliveries.confirm', $deliveryNote) }}"
+                                                class="btn btn-sm btn-outline-secondary"
+                                            >
+                                                Sending Code…
                                             </a>
                                         @else
                                             <form
