@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendDeliveryConfirmationCode;
 use App\Models\DeliveryNote;
 use App\Models\Driver;
 use App\Models\SalesOrder;
@@ -96,7 +97,12 @@ class DeliveryNoteDispatchService
                 'dispatched_at' => now(),
             ]);
 
-            $this->confirmationCodes->generateFor($lockedNote);
+            $code = $this->confirmationCodes->generateFor($lockedNote);
+
+            SendDeliveryConfirmationCode::dispatch(
+                $lockedNote->id,
+                $code,
+            )->afterCommit();
 
             return $lockedNote->fresh([
                 'items.inventoryItem',
