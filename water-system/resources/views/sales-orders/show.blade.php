@@ -197,16 +197,9 @@
                                         $deliveryNote->status === \App\Models\DeliveryNote::STATUS_DISPATCHED
                                         && $salesOrder->status === \App\Models\SalesOrder::STATUS_COMPLETED
                                     )
-                                        <form
-                                            method="POST"
-                                            action="{{ route('delivery-notes.deliver', $deliveryNote) }}"
-                                            class="d-inline"
-                                        >
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                                Mark Delivered
-                                            </button>
-                                        </form>
+                                        <span class="badge bg-light text-dark border">
+                                            Receiver Code Required
+                                        </span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
