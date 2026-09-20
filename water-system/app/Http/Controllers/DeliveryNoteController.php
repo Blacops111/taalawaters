@@ -7,6 +7,7 @@ use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
 use App\Models\Vehicle;
 use App\Models\VehicleAssignment;
+use App\Services\DeliveryNoteDispatchService;
 use App\Services\DeliveryNoteDraftService;
 use Illuminate\Http\Request;
 
@@ -42,15 +43,7 @@ class DeliveryNoteController extends Controller
             ]
         );
 
-        $activeAssignments = VehicleAssignment::query()
-            ->whereNull('unassigned_at')
-            ->whereHas('driver', fn ($query) => $query->where('is_active', true))
-            ->whereHas('vehicle', fn ($query) => $query
-                ->where('is_active', true)
-                ->where('status', Vehicle::STATUS_ASSIGNED))
-            ->with(['driver', 'vehicle'])
-            ->latest('assigned_at')
-            ->get();
+        $activeAssignments = $this->activeAssignments();
 
         return view('delivery-notes.create', compact(
             'salesOrder',
@@ -102,5 +95,70 @@ class DeliveryNoteController extends Controller
                 'success',
                 'Draft delivery note '.$deliveryNote->reference.' was created successfully.'
             );
+    }
+
+    public function dispatchForm(DeliveryNote $deliveryNote)
+    {
+        if ($deliveryNote->status !== DeliveryNote::STATUS_DRAFT) {
+            abort(404);
+        }
+
+        $deliveryNote->load([
+            'salesOrder.customer',
+            'items.inventoryItem',
+            'vehicleAssignment.driver',
+            'vehicleAssignment.vehicle',
+        ]);
+
+        if ($deliveryNote->salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
+            abort(404);
+        }
+
+        $activeAssignments = $this->activeAssignments();
+
+        return view('delivery-notes.dispatch', compact(
+            'deliveryNote',
+            'activeAssignments',
+        ));
+    }
+
+    public function dispatch(
+        Request $request,
+        DeliveryNote $deliveryNote,
+        DeliveryNoteDispatchService $service,
+    ) {
+        $validated = $request->validate([
+            'vehicle_assignment_id' => [
+                'required',
+                'integer',
+                'exists:vehicle_assignments,id',
+            ],
+        ]);
+
+        $assignment = VehicleAssignment::findOrFail(
+            $validated['vehicle_assignment_id']
+        );
+
+        $dispatched = $service->dispatch($deliveryNote, $assignment);
+
+        return redirect()
+            ->route('sales-orders.show', $dispatched->sales_order_id)
+            ->with(
+                'success',
+                'Delivery note '.$dispatched->reference.' was dispatched successfully.'
+            );
+    }
+
+    private function activeAssignments()
+    {
+        return VehicleAssignment::query()
+            ->whereNull('unassigned_at')
+            ->whereHas('driver', fn ($query) => $query->where('is_active', true))
+            ->whereHas('vehicle', fn ($query) => $query
+                ->where('is_active', true)
+                ->where('status', Vehicle::STATUS_ASSIGNED))
+            ->with(['driver', 'vehicle'])
+            ->latest('assigned_at')
+            ->get();
     }
 }
