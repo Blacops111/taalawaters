@@ -7,6 +7,22 @@
         && $deliveryNote->confirmation_code_expires_at
         && $deliveryNote->confirmation_code_expires_at->isFuture()
         && $deliveryNote->confirmation_code_locked_at === null;
+
+    $notificationAccepted =
+        $deliveryNote->confirmation_code_sms_sent_at !== null
+        || $deliveryNote->confirmation_code_email_sent_at !== null;
+
+    $resendCooldownSeconds = max(
+        1,
+        (int) config('delivery.confirmation_code_resend_cooldown_seconds', 60)
+    );
+
+    $canResend =
+        $deliveryNote->confirmation_code_generated_at === null
+        || $deliveryNote->confirmation_code_generated_at
+            ->copy()
+            ->addSeconds($resendCooldownSeconds)
+            ->isPast();
 @endphp
 
 <div class="container" style="max-width: 760px;">
@@ -69,7 +85,7 @@
         </div>
     </div>
 
-    @if($codeActive)
+    @if($codeActive && $notificationAccepted)
         <div class="alert alert-info">
             Ask the recipient for the 6-digit confirmation code only after the delivery has been received and checked.
             Do not ask office staff to reveal the code.
@@ -120,6 +136,37 @@
                 </a>
             </div>
         </form>
+    @elseif($codeActive)
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5>Sending Confirmation Code</h5>
+                <p class="text-muted mb-3">
+                    The code has been generated, but SMS/email has not yet been accepted for sending.
+                    Do not ask the recipient for a code yet.
+                </p>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <a
+                        href="{{ route('driver.deliveries.confirm', $deliveryNote) }}"
+                        class="btn btn-outline-primary"
+                    >
+                        Refresh Status
+                    </a>
+
+                    @if($canResend)
+                        <form
+                            method="POST"
+                            action="{{ route('driver.deliveries.send-code', $deliveryNote) }}"
+                        >
+                            @csrf
+                            <button type="submit" class="btn btn-outline-secondary">
+                                Send New Code
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
     @else
         <div class="card border-0 shadow-sm">
             <div class="card-body">
