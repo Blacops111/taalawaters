@@ -160,6 +160,10 @@ class SalesOrderController extends Controller
             'reversal.reversedBy',
             'reversal.stockMovements.inventoryItem',
             'reversal.stockMovements.creator',
+            'deliveryNotes.items.inventoryItem',
+            'deliveryNotes.vehicleAssignment.driver',
+            'deliveryNotes.vehicleAssignment.vehicle',
+            'deliveryNotes.creator',
         ]);
 
         return view('sales-orders.show', compact('salesOrder'));
