@@ -13,6 +13,45 @@ use Illuminate\Http\Request;
 
 class DeliveryNoteController extends Controller
 {
+    public function index(Request $request)
+    {
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:draft,dispatched,delivered,cancelled'],
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $search = trim($validated['search'] ?? '');
+
+        $deliveryNotes = DeliveryNote::query()
+            ->when(
+                $validated['status'] ?? null,
+                fn ($query, $status) => $query->where('status', $status)
+            )
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('reference', 'like', '%'.$search.'%')
+                        ->orWhere('recipient_name', 'like', '%'.$search.'%')
+                        ->orWhereHas(
+                            'salesOrder',
+                            fn ($saleQuery) => $saleQuery
+                                ->where('reference', 'like', '%'.$search.'%')
+                        );
+                });
+            })
+            ->with([
+                'salesOrder.customer',
+                'vehicleAssignment.driver',
+                'vehicleAssignment.vehicle',
+                'confirmationVerifier',
+            ])
+            ->latest('created_at')
+            ->latest('id')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('delivery-notes.index', compact('deliveryNotes'));
+    }
+
     public function create(SalesOrder $salesOrder)
     {
         if ($salesOrder->status !== SalesOrder::STATUS_COMPLETED) {
