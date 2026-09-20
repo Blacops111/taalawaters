@@ -11,6 +11,10 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        if (request()->user()?->role === 'driver') {
+            return redirect()->route('driver.deliveries.index');
+        }
+
         $activeInventoryItems = InventoryItem::query()
             ->where('is_active', true)
             ->count();
