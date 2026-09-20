@@ -32,7 +32,7 @@ class VehicleAssignmentManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('vehicle-assignments.index'))
             ->assertOk()
-            ->assertSee('Driver & Vehicle Assignments')
+            ->assertSee('Driver & Vehicle Assignments', false)
             ->assertSee($driver->name)
             ->assertSee($vehicle->registration_number);
     }
