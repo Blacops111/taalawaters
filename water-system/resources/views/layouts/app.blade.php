@@ -133,6 +133,7 @@
                         <a href="{{ route('drivers.index') }}" class="taala-nav-link">Drivers</a>
                         <a href="{{ route('vehicles.index') }}" class="taala-nav-link">Vehicles</a>
                         <a href="{{ route('vehicle-assignments.index') }}" class="taala-nav-link">Assignments</a>
+                        <a href="{{ route('delivery-notes.index') }}" class="taala-nav-link">Deliveries</a>
                     @endif
                 </div>
 
