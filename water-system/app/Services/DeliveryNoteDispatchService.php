@@ -50,10 +50,13 @@ class DeliveryNoteDispatchService
 
             if (
                 blank($lockedNote->recipient_name)
-                || blank($lockedNote->recipient_phone)
+                || (
+                    blank($lockedNote->recipient_phone)
+                    && blank($lockedNote->recipient_email)
+                )
             ) {
                 throw ValidationException::withMessages([
-                    'recipient_phone' => 'A delivery recipient name and phone number are required before dispatch.',
+                    'recipient_phone' => 'A recipient name and at least one delivery confirmation contact method are required before dispatch.',
                 ]);
             }
 
