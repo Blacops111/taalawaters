@@ -9,6 +9,9 @@
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-end">
             @if($salesOrder->status === \App\Models\SalesOrder::STATUS_COMPLETED)
+                <a href="{{ route('delivery-notes.create', $salesOrder) }}" class="btn btn-primary">
+                    Create Delivery Note
+                </a>
                 <a href="{{ route('sales-orders.reversal', $salesOrder) }}" class="btn btn-outline-danger">
                     Reverse Sale
                 </a>
@@ -108,6 +111,76 @@
                             <th class="text-end">KES {{ number_format((float) $salesOrder->total_amount, 2) }}</th>
                         </tr>
                     </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <strong>Delivery Notes</strong>
+            @if($salesOrder->status === \App\Models\SalesOrder::STATUS_COMPLETED)
+                <a href="{{ route('delivery-notes.create', $salesOrder) }}" class="btn btn-sm btn-outline-primary">
+                    New Delivery Note
+                </a>
+            @endif
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Driver / Vehicle</th>
+                            <th>Scheduled</th>
+                            <th>Destination</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($salesOrder->deliveryNotes->sortByDesc('id') as $deliveryNote)
+                            <tr>
+                                <td><strong>{{ $deliveryNote->reference }}</strong></td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        {{ ucfirst($deliveryNote->status) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($deliveryNote->vehicleAssignment)
+                                        {{ $deliveryNote->vehicleAssignment->driver?->name ?? 'Unavailable Driver' }}
+                                        <div class="small text-muted">
+                                            {{ $deliveryNote->vehicleAssignment->vehicle?->registration_number ?? 'Unavailable Vehicle' }}
+                                        </div>
+                                    @else
+                                        <span class="text-muted">Not assigned yet</span>
+                                    @endif
+                                </td>
+                                <td>{{ $deliveryNote->scheduled_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                                <td>{{ $deliveryNote->delivery_address ?: '—' }}</td>
+                                <td>{{ $deliveryNote->creator?->name ?? 'System' }}</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="6">
+                                    <div class="small text-muted mb-1">Delivery Items</div>
+                                    @foreach($deliveryNote->items as $deliveryItem)
+                                        <span class="me-3">
+                                            {{ $deliveryItem->inventoryItem?->name ?? 'Unavailable Item' }}:
+                                            <strong>{{ number_format((float) $deliveryItem->quantity, 0) }}</strong>
+                                        </span>
+                                    @endforeach
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    No delivery notes have been created for this sale.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
                 </table>
             </div>
         </div>
