@@ -12,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 class DeliveryNoteDispatchService
 {
+    public function __construct(
+        private readonly DeliveryConfirmationCodeService $confirmationCodes,
+    ) {
+    }
+
     public function dispatch(
         DeliveryNote $deliveryNote,
         VehicleAssignment $vehicleAssignment,
@@ -40,6 +45,15 @@ class DeliveryNoteDispatchService
             if (! $lockedNote->items()->exists()) {
                 throw ValidationException::withMessages([
                     'delivery_note' => 'A delivery note must contain at least one item before dispatch.',
+                ]);
+            }
+
+            if (
+                blank($lockedNote->recipient_name)
+                || blank($lockedNote->recipient_phone)
+            ) {
+                throw ValidationException::withMessages([
+                    'recipient_phone' => 'A delivery recipient name and phone number are required before dispatch.',
                 ]);
             }
 
@@ -78,6 +92,8 @@ class DeliveryNoteDispatchService
                 'status' => DeliveryNote::STATUS_DISPATCHED,
                 'dispatched_at' => now(),
             ]);
+
+            $this->confirmationCodes->generateFor($lockedNote);
 
             return $lockedNote->fresh([
                 'items.inventoryItem',
