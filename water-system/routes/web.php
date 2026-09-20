@@ -16,6 +16,7 @@ use App\Http\Controllers\SalesPricingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TruckController;
+use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -151,6 +152,21 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::put('/drivers/{driver}', [DriverController::class, 'update'])
         ->name('drivers.update');
+
+    Route::get('/vehicles', [VehicleController::class, 'index'])
+        ->name('vehicles.index');
+
+    Route::get('/vehicles/create', [VehicleController::class, 'create'])
+        ->name('vehicles.create');
+
+    Route::post('/vehicles', [VehicleController::class, 'store'])
+        ->name('vehicles.store');
+
+    Route::get('/vehicles/{vehicle}/edit', [VehicleController::class, 'edit'])
+        ->name('vehicles.edit');
+
+    Route::put('/vehicles/{vehicle}', [VehicleController::class, 'update'])
+        ->name('vehicles.update');
 
     Route::get('/suppliers', [SupplierController::class, 'index'])
         ->name('suppliers.index');
