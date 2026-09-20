@@ -35,6 +35,13 @@ return [
         ],
     ],
 
+    'africastalking' => [
+        'environment' => env('AFRICASTALKING_ENV', 'sandbox'),
+        'username' => env('AFRICASTALKING_USERNAME', 'sandbox'),
+        'api_key' => env('AFRICASTALKING_API_KEY'),
+        'sender_id' => env('AFRICASTALKING_SENDER_ID'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
