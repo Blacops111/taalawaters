@@ -127,6 +127,7 @@
                     <a href="{{ route('sales-orders.create') }}" class="taala-nav-link">Sales</a>
                     <a href="{{ route('purchase-requests.index') }}" class="taala-nav-link">Purchasing</a>
                     <a href="{{ route('suppliers.index') }}" class="taala-nav-link">Suppliers</a>
+                    <a href="{{ route('drivers.index') }}" class="taala-nav-link">Drivers</a>
                 </div>
 
                 @auth
