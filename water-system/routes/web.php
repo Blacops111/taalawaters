@@ -218,6 +218,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/sales-orders/{salesOrder}/delivery-notes', [DeliveryNoteController::class, 'store'])
         ->name('delivery-notes.store');
 
+    Route::get('/delivery-notes/{deliveryNote}/dispatch', [DeliveryNoteController::class, 'dispatchForm'])
+        ->name('delivery-notes.dispatch');
+
+    Route::post('/delivery-notes/{deliveryNote}/dispatch', [DeliveryNoteController::class, 'dispatch'])
+        ->name('delivery-notes.dispatch.store');
+
     Route::get('/sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])
         ->name('sales-orders.show');
 
