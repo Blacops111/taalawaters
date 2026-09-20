@@ -108,6 +108,8 @@ class DriverDeliveryConfirmationTest extends TestCase
         $this->actingAs($driverUser)
             ->get(route('driver.deliveries.confirm', $deliveryNote))
             ->assertOk()
+            ->assertSee('maxlength="6"', false)
+            ->assertSee('placeholder="000000"', false)
             ->assertSeeText('Verify & Mark Delivered', false);
     }
 
