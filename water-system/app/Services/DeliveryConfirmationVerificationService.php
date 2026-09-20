@@ -76,6 +76,13 @@ class DeliveryConfirmationVerificationService
                 return ['error' => 'This delivery confirmation code has expired.'];
             }
 
+            if (
+                $lockedNote->confirmation_code_sms_sent_at === null
+                && $lockedNote->confirmation_code_email_sent_at === null
+            ) {
+                return ['error' => 'The confirmation code has not been sent successfully yet.'];
+            }
+
             $maxAttempts = max(
                 1,
                 (int) config('delivery.confirmation_code_max_attempts', 5)
