@@ -57,10 +57,16 @@ class DriverManagementTest extends TestCase
             'name' => 'Mary Driver',
             'phone' => '+254711111111',
             'license_number' => 'DL-MARY-001',
-            'license_expiry' => '2028-05-31',
             'is_active' => true,
             'notes' => 'Delivery driver',
         ]);
+
+        $createdDriver = Driver::where('license_number', 'DL-MARY-001')->firstOrFail();
+
+        $this->assertSame(
+            '2028-05-31',
+            $createdDriver->license_expiry?->format('Y-m-d')
+        );
     }
 
     public function test_admin_can_update_and_deactivate_driver_without_deleting_record(): void
