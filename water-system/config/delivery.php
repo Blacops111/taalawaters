@@ -20,4 +20,9 @@ return [
         'DELIVERY_CONFIRMATION_CODE_MAX_ATTEMPTS',
         5
     ),
+
+    'confirmation_code_resend_cooldown_seconds' => (int) env(
+        'DELIVERY_CONFIRMATION_CODE_RESEND_COOLDOWN_SECONDS',
+        60
+    ),
 ];
