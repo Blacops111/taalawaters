@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Vehicle extends Model
 {
@@ -33,5 +34,10 @@ class Vehicle extends Model
             'capacity_quantity' => 'decimal:3',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(VehicleAssignment::class);
     }
 }
