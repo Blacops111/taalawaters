@@ -16,6 +16,7 @@ use App\Http\Controllers\SalesPricingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TruckController;
+use App\Http\Controllers\VehicleAssignmentController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -152,6 +153,15 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::put('/drivers/{driver}', [DriverController::class, 'update'])
         ->name('drivers.update');
+
+    Route::get('/vehicle-assignments', [VehicleAssignmentController::class, 'index'])
+        ->name('vehicle-assignments.index');
+
+    Route::post('/vehicle-assignments', [VehicleAssignmentController::class, 'store'])
+        ->name('vehicle-assignments.store');
+
+    Route::delete('/vehicle-assignments/{vehicleAssignment}', [VehicleAssignmentController::class, 'destroy'])
+        ->name('vehicle-assignments.destroy');
 
     Route::get('/vehicles', [VehicleController::class, 'index'])
         ->name('vehicles.index');
