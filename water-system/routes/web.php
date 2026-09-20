@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DriverController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionRecipeController;
@@ -135,6 +136,21 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::delete('/purchase-requests/{purchaseRequest}/items/{purchaseRequestItem}', [PurchaseRequestController::class, 'destroyItem'])
         ->name('purchase-requests.items.destroy');
+
+    Route::get('/drivers', [DriverController::class, 'index'])
+        ->name('drivers.index');
+
+    Route::get('/drivers/create', [DriverController::class, 'create'])
+        ->name('drivers.create');
+
+    Route::post('/drivers', [DriverController::class, 'store'])
+        ->name('drivers.store');
+
+    Route::get('/drivers/{driver}/edit', [DriverController::class, 'edit'])
+        ->name('drivers.edit');
+
+    Route::put('/drivers/{driver}', [DriverController::class, 'update'])
+        ->name('drivers.update');
 
     Route::get('/suppliers', [SupplierController::class, 'index'])
         ->name('suppliers.index');
