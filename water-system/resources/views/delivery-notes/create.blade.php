@@ -88,6 +88,37 @@
                         @error('scheduled_at')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 
+                    <div class="col-md-6">
+                        <label for="recipient_name" class="form-label">Recipient Name</label>
+                        <input
+                            type="text"
+                            id="recipient_name"
+                            name="recipient_name"
+                            maxlength="255"
+                            value="{{ old('recipient_name', $salesOrder->customer?->contact_person ?? $salesOrder->customer?->name ?? '') }}"
+                            class="form-control @error('recipient_name') is-invalid @enderror"
+                            required
+                        >
+                        @error('recipient_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="recipient_phone" class="form-label">Recipient Phone</label>
+                        <input
+                            type="tel"
+                            id="recipient_phone"
+                            name="recipient_phone"
+                            maxlength="50"
+                            value="{{ old('recipient_phone', $salesOrder->customer?->phone ?? '') }}"
+                            class="form-control @error('recipient_phone') is-invalid @enderror"
+                            required
+                        >
+                        @error('recipient_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">
+                            This number will receive the delivery confirmation code.
+                        </div>
+                    </div>
+
                     <div class="col-12">
                         <label for="delivery_address" class="form-label">
                             Delivery Address <span class="text-muted">(optional)</span>
