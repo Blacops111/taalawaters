@@ -59,6 +59,58 @@ class DriverDeliveryConfirmationTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
+    public function test_code_cannot_be_verified_before_notification_is_accepted(): void
+    {
+        [$driverUser, $driver] = $this->driverAccount();
+        $deliveryNote = $this->dispatchedDelivery($driverUser, $driver, '482731');
+
+        $deliveryNote->forceFill([
+            'confirmation_code_sms_sent_at' => null,
+            'confirmation_code_email_sent_at' => null,
+        ])->save();
+
+        $this->actingAs($driverUser)
+            ->post(route('driver.deliveries.confirm.store', $deliveryNote), [
+                'confirmation_code' => '482731',
+            ])
+            ->assertSessionHasErrors('confirmation_code');
+
+        $deliveryNote->refresh();
+
+        $this->assertSame(
+            DeliveryNote::STATUS_DISPATCHED,
+            $deliveryNote->status
+        );
+        $this->assertNull($deliveryNote->delivered_at);
+        $this->assertSame(0, $deliveryNote->confirmation_code_failed_attempts);
+    }
+
+    public function test_driver_sees_sending_state_until_notification_is_accepted(): void
+    {
+        [$driverUser, $driver] = $this->driverAccount();
+        $deliveryNote = $this->dispatchedDelivery($driverUser, $driver, '482731');
+
+        $deliveryNote->forceFill([
+            'confirmation_code_sms_sent_at' => null,
+            'confirmation_code_email_sent_at' => null,
+        ])->save();
+
+        $this->actingAs($driverUser)
+            ->get(route('driver.deliveries.confirm', $deliveryNote))
+            ->assertOk()
+            ->assertSee('Sending Confirmation Code')
+            ->assertDontSee('Verify & Mark Delivered');
+
+        $deliveryNote->forceFill([
+            'confirmation_code_sms_sent_at' => now(),
+        ])->save();
+
+        $this->actingAs($driverUser)
+            ->get(route('driver.deliveries.confirm', $deliveryNote))
+            ->assertOk()
+            ->assertSee('Verify & Mark Delivered');
+    }
+
     public function test_incorrect_code_increments_failed_attempts_without_delivering(): void
     {
         [$driverUser, $driver] = $this->driverAccount();
@@ -288,6 +340,7 @@ class DriverDeliveryConfirmationTest extends TestCase
             'confirmation_code_hash' => Hash::make($code),
             'confirmation_code_generated_at' => now()->subMinutes(20),
             'confirmation_code_expires_at' => now()->addHour(),
+            'confirmation_code_sms_sent_at' => now()->subMinutes(19),
             'confirmation_code_failed_attempts' => 0,
         ])->save();
 
