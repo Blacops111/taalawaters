@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
@@ -210,6 +211,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::post('/sales-orders', [SalesOrderController::class, 'store'])
         ->name('sales-orders.store');
+
+    Route::get('/sales-orders/{salesOrder}/delivery-notes/create', [DeliveryNoteController::class, 'create'])
+        ->name('delivery-notes.create');
+
+    Route::post('/sales-orders/{salesOrder}/delivery-notes', [DeliveryNoteController::class, 'store'])
+        ->name('delivery-notes.store');
 
     Route::get('/sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])
         ->name('sales-orders.show');
