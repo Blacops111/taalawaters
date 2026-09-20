@@ -45,6 +45,7 @@ class DeliveryNoteDraftTest extends TestCase
                 'vehicle_assignment_id' => $assignment->id,
                 'recipient_name' => ' Jane Receiver ',
                 'recipient_phone' => ' +254712345678 ',
+                'recipient_email' => ' jane@example.com ',
                 'delivery_address' => ' Ugunja Town ',
                 'scheduled_at' => '2026-09-21 09:00:00',
                 'notes' => ' First trip ',
@@ -67,6 +68,7 @@ class DeliveryNoteDraftTest extends TestCase
             'delivery_address' => 'Ugunja Town',
             'recipient_name' => 'Jane Receiver',
             'recipient_phone' => '+254712345678',
+            'recipient_email' => 'jane@example.com',
             'created_by' => $admin->id,
             'notes' => 'First trip',
         ]);
@@ -79,7 +81,7 @@ class DeliveryNoteDraftTest extends TestCase
         ]);
     }
 
-    public function test_recipient_name_and_phone_are_required_for_delivery_confirmation(): void
+    public function test_recipient_name_and_at_least_one_contact_method_are_required(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         [$sale, $saleItem] = $this->completedSale($admin, 10);
@@ -93,9 +95,34 @@ class DeliveryNoteDraftTest extends TestCase
             ->assertSessionHasErrors([
                 'recipient_name',
                 'recipient_phone',
+                'recipient_email',
             ]);
 
         $this->assertDatabaseCount('delivery_notes', 0);
+    }
+
+    public function test_delivery_recipient_can_use_email_when_phone_is_not_available(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$sale, $saleItem] = $this->completedSale($admin, 10);
+
+        $this->actingAs($admin)
+            ->post(route('delivery-notes.store', $sale), [
+                'recipient_name' => 'Email Receiver',
+                'recipient_email' => 'receiver@example.com',
+                'quantities' => [
+                    $saleItem->id => 1,
+                ],
+            ])
+            ->assertRedirect(route('sales-orders.show', $sale))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('delivery_notes', [
+            'sales_order_id' => $sale->id,
+            'recipient_name' => 'Email Receiver',
+            'recipient_phone' => null,
+            'recipient_email' => 'receiver@example.com',
+        ]);
     }
 
     public function test_multiple_drafts_cannot_allocate_more_than_sale_quantity(): void
