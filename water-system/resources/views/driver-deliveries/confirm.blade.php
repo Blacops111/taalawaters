@@ -1,6 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $codeActive =
+        filled($deliveryNote->confirmation_code_hash)
+        && $deliveryNote->confirmation_code_expires_at
+        && $deliveryNote->confirmation_code_expires_at->isFuture()
+        && $deliveryNote->confirmation_code_locked_at === null;
+@endphp
+
 <div class="container" style="max-width: 760px;">
     <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
@@ -14,6 +22,10 @@
             Back to My Deliveries
         </a>
     </div>
+
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
     @if($errors->any())
         <div class="alert alert-danger">
@@ -57,55 +69,77 @@
         </div>
     </div>
 
-    <div class="alert alert-info">
-        Ask the recipient for the 6-digit confirmation code only after the delivery has been received and checked.
-        Do not ask office staff to reveal the code.
-    </div>
+    @if($codeActive)
+        <div class="alert alert-info">
+            Ask the recipient for the 6-digit confirmation code only after the delivery has been received and checked.
+            Do not ask office staff to reveal the code.
+        </div>
 
-    <form
-        method="POST"
-        action="{{ route('driver.deliveries.confirm.store', $deliveryNote) }}"
-        class="card border-0 shadow-sm"
-    >
-        @csrf
+        <form
+            method="POST"
+            action="{{ route('driver.deliveries.confirm.store', $deliveryNote) }}"
+            class="card border-0 shadow-sm"
+        >
+            @csrf
 
-        <div class="card-body">
-            <label for="confirmation_code" class="form-label fw-semibold">
-                6-Digit Confirmation Code
-            </label>
+            <div class="card-body">
+                <label for="confirmation_code" class="form-label fw-semibold">
+                    6-Digit Confirmation Code
+                </label>
 
-            <input
-                type="text"
-                id="confirmation_code"
-                name="confirmation_code"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                maxlength="6"
-                pattern="[0-9]{6}"
-                value="{{ old('confirmation_code') }}"
-                class="form-control form-control-lg text-center @error('confirmation_code') is-invalid @enderror"
-                style="letter-spacing: .35rem; font-size: 1.5rem;"
-                required
-                autofocus
-            >
+                <input
+                    type="text"
+                    id="confirmation_code"
+                    name="confirmation_code"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                    maxlength="6"
+                    pattern="[0-9]{6}"
+                    value="{{ old('confirmation_code') }}"
+                    class="form-control form-control-lg text-center @error('confirmation_code') is-invalid @enderror"
+                    style="letter-spacing: .35rem; font-size: 1.5rem;"
+                    required
+                    autofocus
+                >
 
-            @error('confirmation_code')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+                @error('confirmation_code')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
 
-            <div class="form-text mt-2">
-                Too many incorrect attempts will lock this confirmation code.
+                <div class="form-text mt-2">
+                    Too many incorrect attempts will lock this confirmation code.
+                </div>
+            </div>
+
+            <div class="card-footer bg-white d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    Verify & Mark Delivered
+                </button>
+                <a href="{{ route('driver.deliveries.index') }}" class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    @else
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5>Send Confirmation Code</h5>
+                <p class="text-muted">
+                    Send a fresh code when you are with or near the recipient.
+                    The previous code, if any, will no longer be valid.
+                </p>
+
+                <form
+                    method="POST"
+                    action="{{ route('driver.deliveries.send-code', $deliveryNote) }}"
+                >
+                    @csrf
+                    <button type="submit" class="btn btn-primary">
+                        {{ $deliveryNote->confirmation_code_generated_at ? 'Send New Code' : 'Send Confirmation Code' }}
+                    </button>
+                </form>
             </div>
         </div>
-
-        <div class="card-footer bg-white d-flex gap-2">
-            <button type="submit" class="btn btn-success">
-                Verify & Mark Delivered
-            </button>
-            <a href="{{ route('driver.deliveries.index') }}" class="btn btn-outline-secondary">
-                Cancel
-            </a>
-        </div>
-    </form>
+    @endif
 </div>
 @endsection
