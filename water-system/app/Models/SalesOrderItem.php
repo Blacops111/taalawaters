@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SalesOrderItem extends Model
 {
@@ -32,5 +33,10 @@ class SalesOrderItem extends Model
     public function inventoryItem(): BelongsTo
     {
         return $this->belongsTo(InventoryItem::class);
+    }
+
+    public function deliveryNoteItems(): HasMany
+    {
+        return $this->hasMany(DeliveryNoteItem::class);
     }
 }
