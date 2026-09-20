@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DeliveryNote;
 use App\Services\DeliveryConfirmationVerificationService;
+use App\Services\DriverDeliveryCodeService;
 use Illuminate\Http\Request;
 
 class DriverDeliveryController extends Controller
@@ -33,6 +34,30 @@ class DriverDeliveryController extends Controller
             'driver',
             'deliveryNotes',
         ));
+    }
+
+    public function sendCode(
+        Request $request,
+        DeliveryNote $deliveryNote,
+        DriverDeliveryCodeService $service,
+    ) {
+        $deliveryNote = $this->ownedDispatchedDelivery(
+            $request,
+            $deliveryNote,
+        );
+
+        $sent = $service->send(
+            $deliveryNote,
+            $request->user()->driverProfile,
+            $request->user(),
+        );
+
+        return redirect()
+            ->route('driver.deliveries.confirm', $sent)
+            ->with(
+                'success',
+                'A fresh confirmation code is being sent to the recipient.'
+            );
     }
 
     public function confirmForm(
