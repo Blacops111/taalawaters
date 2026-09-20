@@ -52,6 +52,33 @@ class DeliveryNoteDispatchTest extends TestCase
         $this->assertSame(DeliveryNote::STATUS_DISPATCHED, $deliveryNote->status);
         $this->assertSame($assignment->id, $deliveryNote->vehicle_assignment_id);
         $this->assertNotNull($deliveryNote->dispatched_at);
+        $this->assertNotNull($deliveryNote->confirmation_code_hash);
+        $this->assertNotNull($deliveryNote->confirmation_code_generated_at);
+        $this->assertNotNull($deliveryNote->confirmation_code_expires_at);
+        $this->assertSame(0, $deliveryNote->confirmation_code_failed_attempts);
+    }
+
+    public function test_dispatch_requires_recipient_contact_method(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [, $deliveryNote] = $this->draftDeliveryNote($admin);
+        $assignment = $this->activeAssignment($admin);
+
+        $deliveryNote->update([
+            'recipient_phone' => null,
+            'recipient_email' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('delivery-notes.dispatch.store', $deliveryNote), [
+                'vehicle_assignment_id' => $assignment->id,
+            ])
+            ->assertSessionHasErrors('recipient_phone');
+
+        $this->assertSame(
+            DeliveryNote::STATUS_DRAFT,
+            $deliveryNote->fresh()->status
+        );
     }
 
     public function test_dispatch_requires_active_driver_vehicle_assignment(): void
@@ -207,6 +234,9 @@ class DeliveryNoteDispatchTest extends TestCase
             'reference' => $reference,
             'sales_order_id' => $sale->id,
             'status' => DeliveryNote::STATUS_DRAFT,
+            'recipient_name' => 'Dispatch Receiver',
+            'recipient_phone' => '+254712345678',
+            'recipient_email' => 'dispatch.receiver@example.com',
             'created_by' => $admin->id,
         ]);
 
