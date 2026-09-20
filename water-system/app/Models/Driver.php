@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Driver extends Model
 {
@@ -21,5 +22,10 @@ class Driver extends Model
             'license_expiry' => 'date',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(VehicleAssignment::class);
     }
 }
