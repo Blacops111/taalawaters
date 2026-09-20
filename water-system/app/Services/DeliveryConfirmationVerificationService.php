@@ -36,7 +36,12 @@ class DeliveryConfirmationVerificationService
                 ->lockForUpdate()
                 ->first();
 
-            if (! $assignment || $assignment->driver_id !== $driver->id) {
+            if (
+                ! $driver->is_active
+                || $driver->user_id !== $user->id
+                || ! $assignment
+                || $assignment->driver_id !== $driver->id
+            ) {
                 return ['forbidden' => true];
             }
 
@@ -67,6 +72,14 @@ class DeliveryConfirmationVerificationService
                 1,
                 (int) config('delivery.confirmation_code_max_attempts', 5)
             );
+
+            if ($lockedNote->confirmation_code_failed_attempts >= $maxAttempts) {
+                $lockedNote->forceFill([
+                    'confirmation_code_locked_at' => now(),
+                ])->save();
+
+                return ['error' => 'This confirmation code is locked after too many failed attempts.'];
+            }
 
             if (! Hash::check($code, $lockedNote->confirmation_code_hash)) {
                 $attempts = min(
