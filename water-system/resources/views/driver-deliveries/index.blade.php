@@ -40,7 +40,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    @if($deliveryNote->status === AppModelsDeliveryNote::STATUS_DISPATCHED)
+                                    @if($deliveryNote->status === 'dispatched')
                                         <span class="badge bg-info text-dark">Dispatched</span>
                                     @else
                                         <span class="badge bg-success">Delivered</span>
@@ -65,7 +65,7 @@
                                 </td>
                                 <td>{{ $deliveryNote->dispatched_at?->format('Y-m-d H:i') ?? '—' }}</td>
                                 <td class="text-end">
-                                    @if($deliveryNote->status === AppModelsDeliveryNote::STATUS_DISPATCHED)
+                                    @if($deliveryNote->status === 'dispatched')
                                         <a
                                             href="{{ route('driver.deliveries.confirm', $deliveryNote) }}"
                                             class="btn btn-sm btn-primary"
