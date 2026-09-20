@@ -59,4 +59,9 @@ class SalesOrder extends Model
     {
         return $this->morphMany(StockMovement::class, 'source');
     }
+
+    public function deliveryNotes(): HasMany
+    {
+        return $this->hasMany(DeliveryNote::class);
+    }
 }
