@@ -235,6 +235,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/sales-orders', [SalesOrderController::class, 'store'])
         ->name('sales-orders.store');
 
+    Route::get('/delivery-notes', [DeliveryNoteController::class, 'index'])
+        ->name('delivery-notes.index');
+
     Route::get('/sales-orders/{salesOrder}/delivery-notes/create', [DeliveryNoteController::class, 'create'])
         ->name('delivery-notes.create');
 
