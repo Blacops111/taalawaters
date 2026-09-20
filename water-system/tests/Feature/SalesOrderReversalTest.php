@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\DeliveryNote;
 use App\Models\InventoryItem;
 use App\Models\SalesOrder;
 use App\Models\SalesOrderReversal;
@@ -59,6 +60,52 @@ class SalesOrderReversalTest extends TestCase
             'source_type' => SalesOrder::class,
             'source_id' => $completed->id,
             'reference' => 'SALE-00000001',
+        ]);
+    }
+
+    public function test_completed_sale_with_draft_delivery_note_cannot_be_reversed(): void
+    {
+        $this->assertDeliveryNoteBlocksReversal(DeliveryNote::STATUS_DRAFT);
+    }
+
+    public function test_completed_sale_with_dispatched_delivery_note_cannot_be_reversed(): void
+    {
+        $this->assertDeliveryNoteBlocksReversal(DeliveryNote::STATUS_DISPATCHED);
+    }
+
+    public function test_completed_sale_with_delivered_delivery_note_cannot_be_reversed(): void
+    {
+        $this->assertDeliveryNoteBlocksReversal(DeliveryNote::STATUS_DELIVERED);
+    }
+
+    public function test_completed_sale_with_only_cancelled_delivery_note_can_be_reversed(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $product = $this->createFinishedProduct();
+        $this->addStock($product, 10, $admin);
+        $order = $this->createDraftWithItem($admin, $product, 3, 30);
+        $completed = app(SalesOrderCompletionService::class)->complete($order, $admin);
+
+        $this->createDeliveryNote(
+            $completed,
+            $admin,
+            DeliveryNote::STATUS_CANCELLED,
+        );
+
+        $reversal = app(SalesOrderReversalService::class)->reverse(
+            $completed,
+            $admin,
+            'Cancelled delivery means the sale can be reversed.',
+        );
+
+        $this->assertSame(
+            SalesOrder::STATUS_REVERSED,
+            $completed->fresh()->status
+        );
+        $this->assertSame(10.0, $this->balance($product));
+        $this->assertDatabaseHas('sales_order_reversals', [
+            'id' => $reversal->id,
+            'sales_order_id' => $completed->id,
         ]);
     }
 
@@ -157,6 +204,68 @@ class SalesOrderReversalTest extends TestCase
         $this->assertDatabaseCount('sales_order_reversals', 0);
         $this->assertDatabaseMissing('stock_movements', [
             'movement_type' => 'sale_reversal_restore',
+        ]);
+    }
+
+    private function assertDeliveryNoteBlocksReversal(string $status): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $product = $this->createFinishedProduct();
+        $this->addStock($product, 10, $admin);
+        $order = $this->createDraftWithItem($admin, $product, 3, 30);
+        $completed = app(SalesOrderCompletionService::class)->complete($order, $admin);
+
+        $this->createDeliveryNote($completed, $admin, $status);
+
+        try {
+            app(SalesOrderReversalService::class)->reverse(
+                $completed,
+                $admin,
+                'This reversal must be blocked by delivery history.',
+            );
+            $this->fail('Expected delivery-note reversal validation error was not thrown.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('sales_order', $exception->errors());
+            $this->assertSame(
+                'A sale with a non-cancelled delivery note cannot be reversed.',
+                $exception->errors()['sales_order'][0]
+            );
+        }
+
+        $this->assertSame(
+            SalesOrder::STATUS_COMPLETED,
+            $completed->fresh()->status
+        );
+        $this->assertDatabaseCount('sales_order_reversals', 0);
+        $this->assertSame(7.0, $this->balance($product));
+        $this->assertDatabaseMissing('stock_movements', [
+            'movement_type' => 'sale_reversal_restore',
+        ]);
+    }
+
+    private function createDeliveryNote(
+        SalesOrder $salesOrder,
+        User $user,
+        string $status,
+    ): DeliveryNote {
+        return DeliveryNote::create([
+            'reference' => 'DN-REV-'.uniqid(),
+            'sales_order_id' => $salesOrder->id,
+            'status' => $status,
+            'recipient_name' => 'Reversal Test Receiver',
+            'recipient_phone' => '+254700000001',
+            'dispatched_at' => in_array(
+                $status,
+                [
+                    DeliveryNote::STATUS_DISPATCHED,
+                    DeliveryNote::STATUS_DELIVERED,
+                ],
+                true
+            ) ? now()->subHour() : null,
+            'delivered_at' => $status === DeliveryNote::STATUS_DELIVERED
+                ? now()->subMinutes(30)
+                : null,
+            'created_by' => $user->id,
         ]);
     }
 
