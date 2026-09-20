@@ -168,6 +168,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/drivers/{driver}', [DriverController::class, 'update'])
         ->name('drivers.update');
 
+    Route::post('/drivers/{driver}/login-account', [DriverController::class, 'linkAccount'])
+        ->name('drivers.login-account.link');
+
+    Route::delete('/drivers/{driver}/login-account', [DriverController::class, 'unlinkAccount'])
+        ->name('drivers.login-account.unlink');
+
     Route::get('/vehicle-assignments', [VehicleAssignmentController::class, 'index'])
         ->name('vehicle-assignments.index');
 
