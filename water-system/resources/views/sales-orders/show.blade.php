@@ -159,6 +159,11 @@
                                             @break
                                         @case(\App\Models\DeliveryNote::STATUS_DELIVERED)
                                             <span class="badge bg-success">Delivered</span>
+                                            @if($deliveryNote->delivered_at)
+                                                <div class="small text-muted mt-1">
+                                                    {{ $deliveryNote->delivered_at->format('Y-m-d H:i') }}
+                                                </div>
+                                            @endif
                                             @break
                                         @default
                                             <span class="badge bg-warning text-dark">{{ ucfirst($deliveryNote->status) }}</span>
@@ -188,6 +193,20 @@
                                         >
                                             Dispatch
                                         </a>
+                                    @elseif(
+                                        $deliveryNote->status === \App\Models\DeliveryNote::STATUS_DISPATCHED
+                                        && $salesOrder->status === \App\Models\SalesOrder::STATUS_COMPLETED
+                                    )
+                                        <form
+                                            method="POST"
+                                            action="{{ route('delivery-notes.deliver', $deliveryNote) }}"
+                                            class="d-inline"
+                                        >
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                Mark Delivered
+                                            </button>
+                                        </form>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
