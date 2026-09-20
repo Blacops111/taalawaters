@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Driver;
+use App\Services\DriverAccountService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -42,6 +43,8 @@ class DriverController extends Controller
 
     public function edit(Driver $driver)
     {
+        $driver->load('user');
+
         return view('drivers.edit', compact('driver'));
     }
 
@@ -61,6 +64,48 @@ class DriverController extends Controller
         return redirect()
             ->route('drivers.index')
             ->with('success', $driver->name.' was updated successfully.');
+    }
+
+    public function linkAccount(
+        Request $request,
+        Driver $driver,
+        DriverAccountService $service,
+    ) {
+        $validated = $request->validate([
+            'login_email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+            ],
+        ]);
+
+        $linked = $service->link(
+            $driver,
+            $validated['login_email'],
+        );
+
+        return redirect()
+            ->route('drivers.edit', $linked)
+            ->with(
+                'success',
+                'Driver login account '.$linked->user->email.' was linked successfully.'
+            );
+    }
+
+    public function unlinkAccount(
+        Driver $driver,
+        DriverAccountService $service,
+    ) {
+        $service->unlink($driver);
+
+        return redirect()
+            ->route('drivers.edit', $driver)
+            ->with(
+                'success',
+                'Driver login account was unlinked successfully.'
+            );
     }
 
     private function rules(?Driver $driver = null): array
