@@ -39,6 +39,10 @@ Route::middleware(['auth', 'driver'])->prefix('driver')->name('driver.')->group(
     Route::get('/deliveries', [DriverDeliveryController::class, 'index'])
         ->name('deliveries.index');
 
+    Route::post('/deliveries/{deliveryNote}/send-code', [DriverDeliveryController::class, 'sendCode'])
+        ->middleware('throttle:5,1')
+        ->name('deliveries.send-code');
+
     Route::get('/deliveries/{deliveryNote}/confirm', [DriverDeliveryController::class, 'confirmForm'])
         ->name('deliveries.confirm');
 
