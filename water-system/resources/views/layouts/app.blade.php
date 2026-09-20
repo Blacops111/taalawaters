@@ -111,7 +111,7 @@
     <nav class="taala-nav">
         <div class="container-fluid px-3 px-lg-4 py-2">
             <div class="d-flex align-items-center gap-3 flex-wrap">
-                <a href="{{ route('dashboard') }}" class="taala-brand-link d-flex align-items-center gap-2 me-lg-3">
+                <a href="{{ auth()->user()?->role === 'driver' ? route('driver.deliveries.index') : route('dashboard') }}" class="taala-brand-link d-flex align-items-center gap-2 me-lg-3">
                     <img src="{{ asset('images/logo.png') }}" alt="Taala Crystal logo" class="taala-brand-logo">
                     <div>
                         <div class="taala-brand-name">Taala <span>Crystal</span></div>
@@ -120,16 +120,20 @@
                 </a>
 
                 <div class="d-flex align-items-center gap-1 flex-wrap">
-                    <a href="{{ route('dashboard') }}" class="taala-nav-link">Dashboard</a>
-                    <a href="{{ route('inventory.index') }}" class="taala-nav-link">Inventory</a>
-                    <a href="{{ route('production.runs.create') }}" class="taala-nav-link">Production</a>
-                    <a href="{{ route('customers.index') }}" class="taala-nav-link">Customers</a>
-                    <a href="{{ route('sales-orders.create') }}" class="taala-nav-link">Sales</a>
-                    <a href="{{ route('purchase-requests.index') }}" class="taala-nav-link">Purchasing</a>
-                    <a href="{{ route('suppliers.index') }}" class="taala-nav-link">Suppliers</a>
-                    <a href="{{ route('drivers.index') }}" class="taala-nav-link">Drivers</a>
-                    <a href="{{ route('vehicles.index') }}" class="taala-nav-link">Vehicles</a>
-                    <a href="{{ route('vehicle-assignments.index') }}" class="taala-nav-link">Assignments</a>
+                    @if(auth()->user()?->role === 'driver')
+                        <a href="{{ route('driver.deliveries.index') }}" class="taala-nav-link">My Deliveries</a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="taala-nav-link">Dashboard</a>
+                        <a href="{{ route('inventory.index') }}" class="taala-nav-link">Inventory</a>
+                        <a href="{{ route('production.runs.create') }}" class="taala-nav-link">Production</a>
+                        <a href="{{ route('customers.index') }}" class="taala-nav-link">Customers</a>
+                        <a href="{{ route('sales-orders.create') }}" class="taala-nav-link">Sales</a>
+                        <a href="{{ route('purchase-requests.index') }}" class="taala-nav-link">Purchasing</a>
+                        <a href="{{ route('suppliers.index') }}" class="taala-nav-link">Suppliers</a>
+                        <a href="{{ route('drivers.index') }}" class="taala-nav-link">Drivers</a>
+                        <a href="{{ route('vehicles.index') }}" class="taala-nav-link">Vehicles</a>
+                        <a href="{{ route('vehicle-assignments.index') }}" class="taala-nav-link">Assignments</a>
+                    @endif
                 </div>
 
                 @auth
