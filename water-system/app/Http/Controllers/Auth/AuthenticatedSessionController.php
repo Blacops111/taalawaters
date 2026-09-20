@@ -28,6 +28,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if ($request->user()->role === 'driver') {
+            return redirect()->intended(
+                route('driver.deliveries.index', absolute: false)
+            );
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
