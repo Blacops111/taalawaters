@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\DeliveryNote;
 use App\Models\Driver;
 use App\Models\SalesOrder;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\VehicleAssignment;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,16 @@ class DeliveryNoteDispatchService
             if (! $driver->is_active) {
                 throw ValidationException::withMessages([
                     'vehicle_assignment_id' => 'The selected assignment has an inactive driver.',
+                ]);
+            }
+
+            $driverUser = $driver->user_id
+                ? User::query()->lockForUpdate()->find($driver->user_id)
+                : null;
+
+            if (! $driverUser || $driverUser->role !== 'driver') {
+                throw ValidationException::withMessages([
+                    'vehicle_assignment_id' => 'The selected driver must have a linked driver login account before dispatch.',
                 ]);
             }
 
