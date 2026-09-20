@@ -4,6 +4,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DriverController;
+use App\Http\Controllers\DriverDeliveryController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionRecipeController;
@@ -32,6 +33,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'driver'])->prefix('driver')->name('driver.')->group(function () {
+    Route::get('/deliveries', [DriverDeliveryController::class, 'index'])
+        ->name('deliveries.index');
+
+    Route::get('/deliveries/{deliveryNote}/confirm', [DriverDeliveryController::class, 'confirmForm'])
+        ->name('deliveries.confirm');
+
+    Route::post('/deliveries/{deliveryNote}/confirm', [DriverDeliveryController::class, 'confirm'])
+        ->middleware('throttle:10,1')
+        ->name('deliveries.confirm.store');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -223,9 +236,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::post('/delivery-notes/{deliveryNote}/dispatch', [DeliveryNoteController::class, 'dispatch'])
         ->name('delivery-notes.dispatch.store');
-
-    Route::post('/delivery-notes/{deliveryNote}/deliver', [DeliveryNoteController::class, 'deliver'])
-        ->name('delivery-notes.deliver');
 
     Route::get('/sales-orders/{salesOrder}', [SalesOrderController::class, 'show'])
         ->name('sales-orders.show');
