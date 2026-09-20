@@ -7,7 +7,6 @@ use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
 use App\Models\Vehicle;
 use App\Models\VehicleAssignment;
-use App\Services\DeliveryNoteCompletionService;
 use App\Services\DeliveryNoteDispatchService;
 use App\Services\DeliveryNoteDraftService;
 use Illuminate\Http\Request;
@@ -164,20 +163,6 @@ class DeliveryNoteController extends Controller
             ->with(
                 'success',
                 'Delivery note '.$dispatched->reference.' was dispatched successfully.'
-            );
-    }
-
-    public function deliver(
-        DeliveryNote $deliveryNote,
-        DeliveryNoteCompletionService $service,
-    ) {
-        $delivered = $service->markDelivered($deliveryNote);
-
-        return redirect()
-            ->route('sales-orders.show', $delivered->sales_order_id)
-            ->with(
-                'success',
-                'Delivery note '.$delivered->reference.' was marked as delivered successfully.'
             );
     }
 
