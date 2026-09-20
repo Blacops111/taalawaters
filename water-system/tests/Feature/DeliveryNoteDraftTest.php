@@ -43,6 +43,8 @@ class DeliveryNoteDraftTest extends TestCase
         $this->actingAs($admin)
             ->post(route('delivery-notes.store', $sale), [
                 'vehicle_assignment_id' => $assignment->id,
+                'recipient_name' => ' Jane Receiver ',
+                'recipient_phone' => ' +254712345678 ',
                 'delivery_address' => ' Ugunja Town ',
                 'scheduled_at' => '2026-09-21 09:00:00',
                 'notes' => ' First trip ',
@@ -63,6 +65,8 @@ class DeliveryNoteDraftTest extends TestCase
             'sales_order_id' => $sale->id,
             'vehicle_assignment_id' => $assignment->id,
             'delivery_address' => 'Ugunja Town',
+            'recipient_name' => 'Jane Receiver',
+            'recipient_phone' => '+254712345678',
             'created_by' => $admin->id,
             'notes' => 'First trip',
         ]);
@@ -73,6 +77,25 @@ class DeliveryNoteDraftTest extends TestCase
             'inventory_item_id' => $saleItem->inventory_item_id,
             'quantity' => 4,
         ]);
+    }
+
+    public function test_recipient_name_and_phone_are_required_for_delivery_confirmation(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$sale, $saleItem] = $this->completedSale($admin, 10);
+
+        $this->actingAs($admin)
+            ->post(route('delivery-notes.store', $sale), [
+                'quantities' => [
+                    $saleItem->id => 1,
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'recipient_name',
+                'recipient_phone',
+            ]);
+
+        $this->assertDatabaseCount('delivery_notes', 0);
     }
 
     public function test_multiple_drafts_cannot_allocate_more_than_sale_quantity(): void
@@ -97,6 +120,8 @@ class DeliveryNoteDraftTest extends TestCase
         $this->actingAs($admin)
             ->from(route('delivery-notes.create', $sale))
             ->post(route('delivery-notes.store', $sale), [
+                'recipient_name' => 'Jane Receiver',
+                'recipient_phone' => '+254712345678',
                 'quantities' => [
                     $saleItem->id => 4,
                 ],
@@ -114,6 +139,8 @@ class DeliveryNoteDraftTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('delivery-notes.store', $sale), [
+                'recipient_name' => 'Jane Receiver',
+                'recipient_phone' => '+254712345678',
                 'quantities' => [
                     $saleItem->id => 0,
                 ],
@@ -136,6 +163,8 @@ class DeliveryNoteDraftTest extends TestCase
         $this->actingAs($admin)
             ->post(route('delivery-notes.store', $sale), [
                 'vehicle_assignment_id' => $assignment->id,
+                'recipient_name' => 'Jane Receiver',
+                'recipient_phone' => '+254712345678',
                 'quantities' => [
                     $saleItem->id => 2,
                 ],
@@ -158,6 +187,8 @@ class DeliveryNoteDraftTest extends TestCase
 
         $this->actingAs($admin)
             ->post(route('delivery-notes.store', $sale), [
+                'recipient_name' => 'Jane Receiver',
+                'recipient_phone' => '+254712345678',
                 'quantities' => [
                     $saleItem->id => 1,
                 ],
