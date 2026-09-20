@@ -32,6 +32,14 @@ class DeliveryConfirmationVerificationService
                 return ['error' => 'Only dispatched deliveries can be confirmed.'];
             }
 
+            if ($lockedNote->dispatched_at === null) {
+                return ['error' => 'This delivery does not have a valid dispatch record.'];
+            }
+
+            if (! $lockedNote->items()->exists()) {
+                return ['error' => 'This delivery has no item history and cannot be confirmed safely.'];
+            }
+
             $assignment = $lockedNote->vehicleAssignment()
                 ->lockForUpdate()
                 ->first();
