@@ -103,7 +103,9 @@
                     </div>
 
                     <div class="col-md-6">
-                        <label for="recipient_phone" class="form-label">Recipient Phone</label>
+                        <label for="recipient_phone" class="form-label">
+                            Recipient Phone <span class="text-muted">(SMS)</span>
+                        </label>
                         <input
                             type="tel"
                             id="recipient_phone"
@@ -111,11 +113,28 @@
                             maxlength="50"
                             value="{{ old('recipient_phone', $salesOrder->customer?->phone ?? '') }}"
                             class="form-control @error('recipient_phone') is-invalid @enderror"
-                            required
                         >
                         @error('recipient_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="recipient_email" class="form-label">
+                            Recipient Email <span class="text-muted">(Email)</span>
+                        </label>
+                        <input
+                            type="email"
+                            id="recipient_email"
+                            name="recipient_email"
+                            maxlength="255"
+                            value="{{ old('recipient_email', $salesOrder->customer?->email ?? '') }}"
+                            class="form-control @error('recipient_email') is-invalid @enderror"
+                        >
+                        @error('recipient_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="col-12">
                         <div class="form-text">
-                            This number will receive the delivery confirmation code.
+                            Enter a phone number, an email address, or both. If both are provided, the confirmation code will be sent through both channels.
                         </div>
                     </div>
 
