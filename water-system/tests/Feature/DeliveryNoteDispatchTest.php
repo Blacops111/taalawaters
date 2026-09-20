@@ -20,7 +20,7 @@ class DeliveryNoteDispatchTest extends TestCase
 
     public function test_admin_can_open_dispatch_page_for_draft_delivery_note(): void
     {
-        $admin = User::factory()->create(['role' => 'admin');
+        $admin = User::factory()->create(['role' => 'admin']);
         [$sale, $deliveryNote] = $this->draftDeliveryNote($admin);
         $assignment = $this->activeAssignment($admin);
 
