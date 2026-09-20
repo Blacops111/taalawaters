@@ -43,13 +43,14 @@
         .taala-brand-link {
             text-decoration: none;
             color: var(--taala-ink);
-            min-width: max-content;
+            min-width: 0;
         }
 
         .taala-brand-logo {
             width: 44px;
             height: 44px;
             object-fit: contain;
+            flex: 0 0 auto;
         }
 
         .taala-brand-name {
@@ -62,35 +63,111 @@
             color: var(--taala-teal);
         }
 
-        .taala-nav-link {
-            color: #45616f;
-            text-decoration: none;
-            font-size: 0.92rem;
-            font-weight: 600;
-            padding: 0.48rem 0.65rem;
-            border-radius: 0.65rem;
-            transition: background-color .2s ease, color .2s ease;
-        }
-
-        .taala-nav-link:hover {
-            background: var(--taala-aqua);
-            color: var(--taala-deep-blue);
-        }
-
         .taala-user {
             color: #617682;
             font-size: .82rem;
             font-weight: 600;
         }
 
+        .taala-menu-button {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #c9e0e5;
+            border-radius: .75rem;
+            background: #fff;
+            color: var(--taala-deep-blue);
+            transition: background-color .2s ease, border-color .2s ease;
+        }
+
+        .taala-menu-button:hover,
+        .taala-menu-button:focus {
+            background: var(--taala-aqua);
+            border-color: #9fcbd3;
+        }
+
+        .taala-menu-icon {
+            width: 20px;
+            height: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .taala-menu-icon span {
+            display: block;
+            height: 2px;
+            width: 100%;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .taala-offcanvas {
+            width: min(360px, 92vw) !important;
+            border-left: 1px solid #dbecef;
+        }
+
+        .taala-menu-section {
+            margin-top: 1.35rem;
+        }
+
+        .taala-menu-section:first-child {
+            margin-top: 0;
+        }
+
+        .taala-menu-heading {
+            margin-bottom: .45rem;
+            padding: 0 .75rem;
+            color: #8297a2;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .taala-menu-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .7rem .8rem;
+            margin-bottom: .2rem;
+            border-radius: .75rem;
+            color: #365461;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color .2s ease, color .2s ease;
+        }
+
+        .taala-menu-link:hover,
+        .taala-menu-link.active {
+            background: var(--taala-aqua);
+            color: var(--taala-deep-blue);
+        }
+
+        .taala-role-badge {
+            display: inline-block;
+            padding: .28rem .55rem;
+            border-radius: 999px;
+            background: var(--taala-aqua);
+            color: var(--taala-deep-blue);
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: capitalize;
+        }
+
         .taala-logout {
+            width: 100%;
             border: 1px solid #b9d9df;
             background: #fff;
             color: var(--taala-deep-blue);
-            font-size: .86rem;
+            font-size: .9rem;
             font-weight: 700;
-            padding: .45rem .75rem;
-            border-radius: .65rem;
+            padding: .7rem .8rem;
+            border-radius: .75rem;
+            text-align: left;
         }
 
         .taala-logout:hover {
@@ -103,6 +180,25 @@
             padding-top: 1.6rem;
             padding-bottom: 2.5rem;
         }
+
+        @media (max-width: 575.98px) {
+            .taala-brand-logo {
+                width: 38px;
+                height: 38px;
+            }
+
+            .taala-brand-name {
+                font-size: 1.02rem;
+            }
+
+            .taala-company-name {
+                display: none;
+            }
+
+            .taala-user {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -110,45 +206,189 @@
 <div class="min-h-screen">
     <nav class="taala-nav">
         <div class="container-fluid px-3 px-lg-4 py-2">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <a href="{{ auth()->user()?->role === 'driver' ? route('driver.deliveries.index') : route('dashboard') }}" class="taala-brand-link d-flex align-items-center gap-2 me-lg-3">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+                <a
+                    href="{{ auth()->user()?->role === 'driver' ? route('driver.deliveries.index') : route('dashboard') }}"
+                    class="taala-brand-link d-flex align-items-center gap-2"
+                >
                     <img src="{{ asset('images/logo.png') }}" alt="Taala Crystal logo" class="taala-brand-logo">
                     <div>
                         <div class="taala-brand-name">Taala <span>Crystal</span></div>
-                        <div class="small text-muted" style="font-size: .7rem; line-height: 1;">Uholo Fresh Springs Co. Ltd</div>
+                        <div class="taala-company-name small text-muted" style="font-size: .7rem; line-height: 1;">
+                            Uholo Fresh Springs Co. Ltd
+                        </div>
                     </div>
                 </a>
 
-                <div class="d-flex align-items-center gap-1 flex-wrap">
-                    @if(auth()->user()?->role === 'driver')
-                        <a href="{{ route('driver.deliveries.index') }}" class="taala-nav-link">My Deliveries</a>
-                    @else
-                        <a href="{{ route('dashboard') }}" class="taala-nav-link">Dashboard</a>
-                        <a href="{{ route('inventory.index') }}" class="taala-nav-link">Inventory</a>
-                        <a href="{{ route('production.runs.create') }}" class="taala-nav-link">Production</a>
-                        <a href="{{ route('customers.index') }}" class="taala-nav-link">Customers</a>
-                        <a href="{{ route('sales-orders.create') }}" class="taala-nav-link">Sales</a>
-                        <a href="{{ route('purchase-requests.index') }}" class="taala-nav-link">Purchasing</a>
-                        <a href="{{ route('suppliers.index') }}" class="taala-nav-link">Suppliers</a>
-                        <a href="{{ route('drivers.index') }}" class="taala-nav-link">Drivers</a>
-                        <a href="{{ route('vehicles.index') }}" class="taala-nav-link">Vehicles</a>
-                        <a href="{{ route('vehicle-assignments.index') }}" class="taala-nav-link">Assignments</a>
-                        <a href="{{ route('delivery-notes.index') }}" class="taala-nav-link">Deliveries</a>
-                    @endif
-                </div>
-
                 @auth
-                    <div class="ms-lg-auto d-flex align-items-center gap-2 flex-wrap">
-                        <span class="taala-user">{{ auth()->user()->name }}</span>
-                        <form method="POST" action="{{ route('logout') }}" class="m-0">
-                            @csrf
-                            <button type="submit" class="taala-logout">Logout</button>
-                        </form>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="text-end">
+                            <div class="taala-user">{{ auth()->user()->name }}</div>
+                            <span class="taala-role-badge">{{ auth()->user()->role }}</span>
+                        </div>
+
+                        <button
+                            class="taala-menu-button"
+                            type="button"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#taalaMainMenu"
+                            aria-controls="taalaMainMenu"
+                            aria-label="Open navigation menu"
+                        >
+                            <span class="taala-menu-icon" aria-hidden="true">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
+                        </button>
                     </div>
                 @endauth
             </div>
         </div>
     </nav>
+
+    @auth
+        <div
+            class="offcanvas offcanvas-end taala-offcanvas"
+            tabindex="-1"
+            id="taalaMainMenu"
+            aria-labelledby="taalaMainMenuLabel"
+        >
+            <div class="offcanvas-header border-bottom">
+                <div>
+                    <h5 class="offcanvas-title mb-1" id="taalaMainMenuLabel">Navigation</h5>
+                    <div class="small text-muted">{{ auth()->user()->name }}</div>
+                </div>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="offcanvas"
+                    aria-label="Close navigation menu"
+                ></button>
+            </div>
+
+            <div class="offcanvas-body">
+                @if(auth()->user()->role === 'driver')
+                    <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Driver Portal</div>
+                        <a
+                            href="{{ route('driver.deliveries.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('driver.deliveries.*') ? 'active' : '' }}"
+                        >
+                            <span>My Deliveries</span>
+                        </a>
+                    </div>
+                @elseif(auth()->user()->role === 'admin')
+                    <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Overview</div>
+                        <a
+                            href="{{ route('dashboard') }}"
+                            class="taala-menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                        >
+                            <span>Dashboard</span>
+                        </a>
+                    </div>
+
+                    <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Operations</div>
+                        <a
+                            href="{{ route('inventory.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}"
+                        >
+                            <span>Inventory</span>
+                        </a>
+                        <a
+                            href="{{ route('production.runs.create') }}"
+                            class="taala-menu-link {{ request()->routeIs('production.*') ? 'active' : '' }}"
+                        >
+                            <span>Production</span>
+                        </a>
+                        <a
+                            href="{{ route('sales-orders.create') }}"
+                            class="taala-menu-link {{ request()->routeIs('sales-orders.*') ? 'active' : '' }}"
+                        >
+                            <span>Sales</span>
+                        </a>
+                        <a
+                            href="{{ route('customers.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('customers.*') ? 'active' : '' }}"
+                        >
+                            <span>Customers</span>
+                        </a>
+                    </div>
+
+                    <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Supply</div>
+                        <a
+                            href="{{ route('purchase-requests.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('purchase-requests.*') ? 'active' : '' }}"
+                        >
+                            <span>Purchasing</span>
+                        </a>
+                        <a
+                            href="{{ route('suppliers.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}"
+                        >
+                            <span>Suppliers</span>
+                        </a>
+                    </div>
+
+                    <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Logistics</div>
+                        <a
+                            href="{{ route('delivery-notes.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('delivery-notes.*') ? 'active' : '' }}"
+                        >
+                            <span>Deliveries</span>
+                        </a>
+                        <a
+                            href="{{ route('drivers.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('drivers.*') ? 'active' : '' }}"
+                        >
+                            <span>Drivers</span>
+                        </a>
+                        <a
+                            href="{{ route('vehicles.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('vehicles.*') ? 'active' : '' }}"
+                        >
+                            <span>Vehicles</span>
+                        </a>
+                        <a
+                            href="{{ route('vehicle-assignments.index') }}"
+                            class="taala-menu-link {{ request()->routeIs('vehicle-assignments.*') ? 'active' : '' }}"
+                        >
+                            <span>Assignments</span>
+                        </a>
+                    </div>
+                @else
+                    <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Overview</div>
+                        <a
+                            href="{{ route('dashboard') }}"
+                            class="taala-menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                        >
+                            <span>Dashboard</span>
+                        </a>
+                    </div>
+                @endif
+
+                <div class="taala-menu-section">
+                    <div class="taala-menu-heading">Account</div>
+                    <a
+                        href="{{ route('profile.edit') }}"
+                        class="taala-menu-link {{ request()->routeIs('profile.*') ? 'active' : '' }}"
+                    >
+                        <span>Profile</span>
+                    </a>
+
+                    <form method="POST" action="{{ route('logout') }}" class="mt-2">
+                        @csrf
+                        <button type="submit" class="taala-logout">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endauth
 
     <main class="taala-main">
         @yield('content')
