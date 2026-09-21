@@ -347,6 +347,12 @@
                         >
                             <span>Journal Entries</span>
                         </a>
+                        <a
+                            href="{{ route('accounting.supplier-payments') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.supplier-payments*') ? 'active' : '' }}"
+                        >
+                            <span>Supplier Payments</span>
+                        </a>
                     </div>
 
                     <div class="taala-menu-section">
