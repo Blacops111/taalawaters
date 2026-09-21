@@ -110,6 +110,11 @@ class SalesOrderCompletionService
                 ]);
             }
 
+            app(SalesAccountingService::class)->postCompletedSale(
+                $lockedOrder,
+                $user,
+            );
+
             return $lockedOrder->fresh([
                 'customer',
                 'creator',
