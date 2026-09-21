@@ -60,6 +60,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
         ->name('accounting.accounts');
 
+    Route::get('/accounting/journals', [AccountingController::class, 'journals'])
+        ->name('accounting.journals');
+
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
 
