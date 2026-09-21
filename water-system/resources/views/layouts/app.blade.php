@@ -334,6 +334,16 @@
                     </div>
 
                     <div class="taala-menu-section">
+                        <div class="taala-menu-heading">Accounting</div>
+                        <a
+                            href="{{ route('accounting.accounts') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.*') ? 'active' : '' }}"
+                        >
+                            <span>Chart of Accounts</span>
+                        </a>
+                    </div>
+
+                    <div class="taala-menu-section">
                         <div class="taala-menu-heading">Logistics</div>
                         <a
                             href="{{ route('delivery-notes.index') }}"
