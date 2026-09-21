@@ -210,6 +210,13 @@ class PurchaseRequestController extends Controller
                     fn ($query) => $query->where('is_active', true)
                 ),
             ],
+            'approved_unit_costs' => ['required', 'array'],
+            'approved_unit_costs.*' => [
+                'required',
+                'numeric',
+                'gt:0',
+                'max:9999999999999',
+            ],
         ]);
 
         DB::transaction(function () use ($purchaseRequest, $validated) {
@@ -220,13 +227,37 @@ class PurchaseRequestController extends Controller
 
             $this->ensureSubmitted($lockedRequest);
 
-            $hasItems = PurchaseRequestItem::query()
+            $requestItems = PurchaseRequestItem::query()
                 ->where('purchase_request_id', $lockedRequest->id)
-                ->exists();
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
-            if (!$hasItems) {
+            if ($requestItems->isEmpty()) {
                 throw ValidationException::withMessages([
                     'purchase_request' => 'A purchase request must contain at least one material before approval.',
+                ]);
+            }
+
+            foreach ($requestItems as $requestItem) {
+                $rawCost = $validated['approved_unit_costs'][$requestItem->id]
+                    ?? $validated['approved_unit_costs'][(string) $requestItem->id]
+                    ?? null;
+
+                if ($rawCost === null || (float) $rawCost <= 0) {
+                    throw ValidationException::withMessages([
+                        'approved_unit_costs.'.$requestItem->id
+                            => 'Enter an approved unit cost greater than zero for every material.',
+                    ]);
+                }
+
+                $requestItem->update([
+                    'approved_unit_cost' => number_format(
+                        round((float) $rawCost, 2),
+                        2,
+                        '.',
+                        ''
+                    ),
                 ]);
             }
 
