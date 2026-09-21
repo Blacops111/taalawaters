@@ -7,12 +7,20 @@ use App\Models\SalesOrder;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\SalesOrderCompletionService;
+use Database\Seeders\AccountingAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SalesOrderReversalControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app(AccountingAccountSeeder::class)->run();
+    }
 
     public function test_completed_sale_shows_reversal_confirmation_page(): void
     {
