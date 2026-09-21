@@ -18,10 +18,14 @@ class PurchaseRequestReviewTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $supplier = $this->supplier('Approval Supplier', true);
         $purchaseRequest = $this->submittedRequest($admin);
+        $requestItem = $purchaseRequest->items()->firstOrFail();
 
         $this->actingAs($admin)
             ->post(route('purchase-requests.approve', $purchaseRequest), [
                 'supplier_id' => $supplier->id,
+                'approved_unit_costs' => [
+                    $requestItem->id => 2.50,
+                ],
             ])
             ->assertRedirect(route('purchase-requests.edit', $purchaseRequest))
             ->assertSessionHas('success');
@@ -33,6 +37,7 @@ class PurchaseRequestReviewTest extends TestCase
         $this->assertSame($admin->id, $purchaseRequest->approved_by);
         $this->assertNotNull($purchaseRequest->approved_at);
         $this->assertNull($purchaseRequest->rejection_reason);
+        $this->assertSame('2.50', $requestItem->fresh()->approved_unit_cost);
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
