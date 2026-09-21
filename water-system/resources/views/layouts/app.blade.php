@@ -337,9 +337,15 @@
                         <div class="taala-menu-heading">Accounting</div>
                         <a
                             href="{{ route('accounting.accounts') }}"
-                            class="taala-menu-link {{ request()->routeIs('accounting.*') ? 'active' : '' }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.accounts') ? 'active' : '' }}"
                         >
                             <span>Chart of Accounts</span>
+                        </a>
+                        <a
+                            href="{{ route('accounting.journals') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.journals') ? 'active' : '' }}"
+                        >
+                            <span>Journal Entries</span>
                         </a>
                     </div>
 
