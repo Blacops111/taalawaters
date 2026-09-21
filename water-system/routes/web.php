@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryNoteController;
@@ -55,6 +56,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin-test', function () {
         return 'Admin Access Granted';
     });
+
+    Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
+        ->name('accounting.accounts');
 
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
