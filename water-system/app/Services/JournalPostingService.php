@@ -20,10 +20,17 @@ class JournalPostingService
         string $description,
         array $lines,
         ?Model $source = null,
+        ?JournalEntry $reversalOf = null,
     ): JournalEntry {
         if ($source && ! $source->exists) {
             throw ValidationException::withMessages([
                 'source' => 'The journal source must already exist before posting.',
+            ]);
+        }
+
+        if ($reversalOf && ! $reversalOf->exists) {
+            throw ValidationException::withMessages([
+                'reversal' => 'The journal being reversed must already exist.',
             ]);
         }
 
@@ -81,12 +88,74 @@ class JournalPostingService
             ]);
         }
 
+        if ($reversalOf) {
+            $original = JournalEntry::query()
+                ->with('lines')
+                ->findOrFail($reversalOf->id);
+
+            if ($original->status !== JournalEntry::STATUS_POSTED) {
+                throw ValidationException::withMessages([
+                    'reversal' => 'Only posted journal entries can be reversed.',
+                ]);
+            }
+
+            $expectedLines = $original->lines
+                ->map(fn ($line) => implode(':', [
+                    $line->accounting_account_id,
+                    $this->toCents($line->credit),
+                    $this->toCents($line->debit),
+                ]))
+                ->sort()
+                ->values()
+                ->all();
+
+            $actualLines = collect($normalizedLines)
+                ->map(fn ($line) => implode(':', [
+                    $line['account_id'],
+                    $this->toCents($line['debit']),
+                    $this->toCents($line['credit']),
+                ]))
+                ->sort()
+                ->values()
+                ->all();
+
+            if ($expectedLines !== $actualLines) {
+                throw ValidationException::withMessages([
+                    'reversal' => 'A reversal journal must exactly reverse the original debit and credit lines.',
+                ]);
+            }
+        }
+
         return DB::transaction(function () use (
             $user,
             $validated,
             $normalizedLines,
             $source,
+            $reversalOf,
         ) {
+            $lockedReversalOf = null;
+
+            if ($reversalOf) {
+                $lockedReversalOf = JournalEntry::query()
+                    ->whereKey($reversalOf->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($lockedReversalOf->status !== JournalEntry::STATUS_POSTED) {
+                    throw ValidationException::withMessages([
+                        'reversal' => 'Only posted journal entries can be reversed.',
+                    ]);
+                }
+
+                if (JournalEntry::query()
+                    ->where('reversal_of_id', $lockedReversalOf->id)
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        'reversal' => 'This journal entry has already been reversed.',
+                    ]);
+                }
+            }
+
             $accountIds = collect($normalizedLines)
                 ->pluck('account_id')
                 ->unique()
@@ -107,7 +176,7 @@ class JournalPostingService
             }
 
             foreach ($accountIds as $accountId) {
-                if (! $accounts->get($accountId)->is_active) {
+                if (! $accounts->get($accountId)->is_active && ! $lockedReversalOf) {
                     throw ValidationException::withMessages([
                         'lines' => 'Inactive accounting accounts cannot be used in new journal entries.',
                     ]);
@@ -121,6 +190,7 @@ class JournalPostingService
                 'description' => $validated['description'],
                 'source_type' => $source?->getMorphClass(),
                 'source_id' => $source?->getKey(),
+                'reversal_of_id' => $lockedReversalOf?->id,
                 'posted_by' => $user->id,
                 'posted_at' => null,
             ]);
