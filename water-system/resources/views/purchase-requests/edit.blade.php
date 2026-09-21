@@ -161,6 +161,10 @@
                                     <th>Material</th>
                                     <th>Unit</th>
                                     <th class="text-end">Quantity</th>
+                                    @if($purchaseRequest->status !== 'draft')
+                                        <th class="text-end">Approved Unit Cost</th>
+                                        <th class="text-end">Approved Total</th>
+                                    @endif
                                     @if($purchaseRequest->status === 'draft')
                                         <th class="text-end">Action</th>
                                     @endif
@@ -173,6 +177,26 @@
                                         <td>{{ $requestItem->inventoryItem->name }}</td>
                                         <td>{{ $requestItem->inventoryItem->unit }}</td>
                                         <td class="text-end">{{ rtrim(rtrim(number_format((float) $requestItem->quantity, 3, '.', ''), '0'), '.') }}</td>
+
+                                        @if($purchaseRequest->status !== 'draft')
+                                            <td class="text-end">
+                                                @if($requestItem->approved_unit_cost !== null)
+                                                    KES {{ number_format((float) $requestItem->approved_unit_cost, 2) }}
+                                                @else
+                                                    <span class="text-muted">Pending approval</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-end">
+                                                @if($requestItem->approved_unit_cost !== null)
+                                                    KES {{ number_format(
+                                                        (float) $requestItem->quantity * (float) $requestItem->approved_unit_cost,
+                                                        2
+                                                    ) }}
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                        @endif
 
                                         @if($purchaseRequest->status === 'draft')
                                             <td class="text-end">
@@ -194,7 +218,7 @@
                                 @empty
                                     <tr>
                                         <td
-                                            colspan="{{ $purchaseRequest->status === 'draft' ? 5 : 4 }}"
+                                            colspan="{{ $purchaseRequest->status === 'draft' ? 5 : 6 }}"
                                             class="text-center text-muted py-5"
                                         >
                                             No materials have been added yet.
@@ -317,6 +341,45 @@
                                         @error('supplier_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <div class="fw-semibold mb-2">Approved Unit Costs</div>
+                                        <div class="small text-muted mb-3">
+                                            Enter the agreed supplier cost for every requested material before approval.
+                                        </div>
+
+                                        @foreach($purchaseRequest->items as $requestItem)
+                                            <div class="mb-3">
+                                                <label
+                                                    for="approved_unit_cost_{{ $requestItem->id }}"
+                                                    class="form-label"
+                                                >
+                                                    {{ $requestItem->inventoryItem->sku }}
+                                                    — {{ $requestItem->inventoryItem->name }}
+                                                    ({{ rtrim(rtrim(number_format((float) $requestItem->quantity, 3, '.', ''), '0'), '.') }}
+                                                    {{ $requestItem->inventoryItem->unit }})
+                                                </label>
+
+                                                <div class="input-group">
+                                                    <span class="input-group-text">KES</span>
+                                                    <input
+                                                        type="number"
+                                                        id="approved_unit_cost_{{ $requestItem->id }}"
+                                                        name="approved_unit_costs[{{ $requestItem->id }}]"
+                                                        min="0.01"
+                                                        step="0.01"
+                                                        max="9999999999999"
+                                                        value="{{ old('approved_unit_costs.'.$requestItem->id) }}"
+                                                        class="form-control @error('approved_unit_costs.'.$requestItem->id) is-invalid @enderror"
+                                                        required
+                                                    >
+                                                    @error('approved_unit_costs.'.$requestItem->id)
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
 
                                     <button type="submit" class="btn btn-success">
