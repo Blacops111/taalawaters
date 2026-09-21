@@ -161,6 +161,11 @@ class PurchaseReceiptService
                 ]);
             }
 
+            app(PurchaseAccountingService::class)->postReceipt(
+                $receipt,
+                $user,
+            );
+
             $lockedRequest->update([
                 'status' => $allFullyReceived
                     ? PurchaseRequest::STATUS_RECEIVED
