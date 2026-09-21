@@ -70,6 +70,12 @@ class PurchaseReceiptAccountingPostingTest extends TestCase
             PurchaseRequest::STATUS_PARTIALLY_RECEIVED,
             $purchaseRequest->fresh()->status
         );
+
+        $this->actingAs($admin)
+            ->get(route('purchase-requests.receipts.create', $purchaseRequest))
+            ->assertOk()
+            ->assertSee('KES 1.25')
+            ->assertSee('KES 375.00');
     }
 
     public function test_each_partial_goods_receipt_posts_only_the_value_received_now(): void
