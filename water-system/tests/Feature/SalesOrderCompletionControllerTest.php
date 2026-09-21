@@ -6,12 +6,20 @@ use App\Models\InventoryItem;
 use App\Models\SalesOrder;
 use App\Models\StockMovement;
 use App\Models\User;
+use Database\Seeders\AccountingAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SalesOrderCompletionControllerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app(AccountingAccountSeeder::class)->run();
+    }
 
     public function test_admin_can_complete_sale_from_draft_screen_and_inventory_is_deducted(): void
     {
