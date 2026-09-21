@@ -135,6 +135,14 @@
                         <div class="text-muted">Posted at</div>
                         <div>{{ $entry->posted_at?->format('d M Y H:i') ?? 'Not posted' }}</div>
                     </div>
+
+                    @if($entry->reversalOf)
+                        <div class="col-12">
+                            <div class="alert alert-warning py-2 mb-0">
+                                Reversal of journal <strong>{{ $entry->reversalOf->reference }}</strong>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <details class="mt-3">
