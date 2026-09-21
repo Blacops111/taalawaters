@@ -12,12 +12,14 @@ class PurchaseRequestItem extends Model
         'purchase_request_id',
         'inventory_item_id',
         'quantity',
+        'approved_unit_cost',
     ];
 
     protected function casts(): array
     {
         return [
             'quantity' => 'decimal:3',
+            'approved_unit_cost' => 'decimal:2',
         ];
     }
 
