@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\SalesOrderCompletionService;
 use App\Services\SalesOrderReversalService;
 use Carbon\CarbonImmutable;
+use Database\Seeders\AccountingAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -18,6 +19,13 @@ use Tests\TestCase;
 class SalesOrderReversalTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app(AccountingAccountSeeder::class)->run();
+    }
 
     public function test_completed_sale_can_be_reversed_and_finished_stock_is_restored(): void
     {
