@@ -64,4 +64,9 @@ class SalesOrder extends Model
     {
         return $this->hasMany(DeliveryNote::class);
     }
+
+    public function journalEntries(): MorphMany
+    {
+        return $this->morphMany(JournalEntry::class, 'source');
+    }
 }
