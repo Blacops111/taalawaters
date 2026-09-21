@@ -182,6 +182,11 @@ class SalesOrderReversalService
                 ]);
             }
 
+            app(SalesAccountingService::class)->postSaleReversal(
+                $reversal,
+                $user,
+            );
+
             $lockedOrder->status = SalesOrder::STATUS_REVERSED;
             $lockedOrder->save();
 
