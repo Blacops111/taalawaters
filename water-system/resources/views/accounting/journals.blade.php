@@ -96,7 +96,7 @@
                         <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                             <h5 class="mb-0">{{ $entry->reference ?? 'Unposted Journal #'.$entry->id }}</h5>
 
-                            @if($entry->status === AppModelsJournalEntry::STATUS_POSTED)
+                            @if($entry->status === 'posted')
                                 <span class="badge bg-success">Posted</span>
                             @else
                                 <span class="badge bg-warning text-dark">Draft</span>
