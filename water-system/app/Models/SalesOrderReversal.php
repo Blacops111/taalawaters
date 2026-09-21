@@ -37,4 +37,9 @@ class SalesOrderReversal extends Model
     {
         return $this->morphMany(StockMovement::class, 'source');
     }
+
+    public function journalEntries(): MorphMany
+    {
+        return $this->morphMany(JournalEntry::class, 'source');
+    }
 }
