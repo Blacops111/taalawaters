@@ -99,6 +99,7 @@
                                     <th>Material</th>
                                     <th>Unit</th>
                                     <th class="text-end">Approved Qty</th>
+                                    <th class="text-end">Unit Cost</th>
                                     <th class="text-end">Received Before</th>
                                     <th class="text-end">Remaining</th>
                                     <th style="min-width: 170px;">Receive Now</th>
@@ -117,6 +118,13 @@
                                         <td>{{ $requestItem->inventoryItem->name }}</td>
                                         <td>{{ $requestItem->inventoryItem->unit }}</td>
                                         <td class="text-end">{{ number_format($approved, 3) }}</td>
+                                        <td class="text-end">
+                                            @if($requestItem->approved_unit_cost !== null)
+                                                KES {{ number_format((float) $requestItem->approved_unit_cost, 2) }}
+                                            @else
+                                                <span class="text-danger">Missing</span>
+                                            @endif
+                                        </td>
                                         <td class="text-end">{{ number_format($received, 3) }}</td>
                                         <td class="text-end"><strong>{{ number_format($remaining, 3) }}</strong></td>
                                         <td>
@@ -173,10 +181,17 @@
                             <th>Received By</th>
                             <th>Supplier Ref</th>
                             <th>Items</th>
+                            <th class="text-end">Receipt Value</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($purchaseRequest->receipts as $receipt)
+                            @php
+                                $receiptValue = $receipt->items->sum(
+                                    fn ($receiptItem) => (float) $receiptItem->quantity
+                                        * (float) ($receiptItem->purchaseRequestItem?->approved_unit_cost ?? 0)
+                                );
+                            @endphp
                             <tr>
                                 <td><strong>{{ $receipt->reference }}</strong></td>
                                 <td>{{ optional($receipt->received_at)->format('Y-m-d H:i') }}</td>
@@ -188,13 +203,19 @@
                                             {{ $receiptItem->inventoryItem->sku }}:
                                             {{ number_format((float) $receiptItem->quantity, 3) }}
                                             {{ $receiptItem->inventoryItem->unit }}
+                                            @if($receiptItem->purchaseRequestItem?->approved_unit_cost !== null)
+                                                @ KES {{ number_format((float) $receiptItem->purchaseRequestItem->approved_unit_cost, 2) }}
+                                            @endif
                                         </div>
                                     @endforeach
+                                </td>
+                                <td class="text-end fw-semibold">
+                                    KES {{ number_format($receiptValue, 2) }}
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">
+                                <td colspan="6" class="text-center text-muted py-4">
                                     No goods receipts recorded yet.
                                 </td>
                             </tr>
