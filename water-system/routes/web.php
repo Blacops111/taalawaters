@@ -18,6 +18,7 @@ use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SalesPricingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TruckController;
 use App\Http\Controllers\VehicleAssignmentController;
 use App\Http\Controllers\VehicleController;
@@ -62,6 +63,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get('/accounting/journals', [AccountingController::class, 'journals'])
         ->name('accounting.journals');
+
+    Route::get('/accounting/supplier-payments', [SupplierPaymentController::class, 'index'])
+        ->name('accounting.supplier-payments');
+
+    Route::post('/accounting/supplier-payments', [SupplierPaymentController::class, 'store'])
+        ->name('accounting.supplier-payments.store');
 
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');
