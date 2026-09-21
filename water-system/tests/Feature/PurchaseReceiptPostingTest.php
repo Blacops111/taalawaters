@@ -7,12 +7,20 @@ use App\Models\PurchaseReceipt;
 use App\Models\PurchaseRequest;
 use App\Models\Supplier;
 use App\Models\User;
+use Database\Seeders\AccountingAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PurchaseReceiptPostingTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app(AccountingAccountSeeder::class)->run();
+    }
 
     public function test_admin_can_partially_receive_approved_goods_and_inventory_increases(): void
     {
@@ -195,6 +203,7 @@ class PurchaseReceiptPostingTest extends TestCase
         $requestItem = $purchaseRequest->items()->create([
             'inventory_item_id' => $item->id,
             'quantity' => $quantity,
+            'approved_unit_cost' => 1.25,
         ]);
 
         return [$admin, $purchaseRequest, $requestItem, $item];
