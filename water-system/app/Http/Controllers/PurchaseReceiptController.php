@@ -27,7 +27,11 @@ class PurchaseReceiptController extends Controller
                 ->withSum('receiptItems as received_quantity', 'quantity')
                 ->orderBy('id'),
             'receipts' => fn ($query) => $query
-                ->with(['receiver:id,name', 'items.inventoryItem:id,sku,name,unit'])
+                ->with([
+                    'receiver:id,name',
+                    'items.inventoryItem:id,sku,name,unit',
+                    'items.purchaseRequestItem:id,approved_unit_cost',
+                ])
                 ->orderByDesc('received_at')
                 ->orderByDesc('id'),
         ]);
