@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class PurchaseReceipt extends Model
 {
@@ -37,5 +38,10 @@ class PurchaseReceipt extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseReceiptItem::class);
+    }
+
+    public function journalEntries(): MorphMany
+    {
+        return $this->morphMany(JournalEntry::class, 'source');
     }
 }
