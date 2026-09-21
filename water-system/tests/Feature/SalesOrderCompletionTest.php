@@ -7,6 +7,7 @@ use App\Models\SalesOrder;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\SalesOrderCompletionService;
+use Database\Seeders\AccountingAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -14,6 +15,13 @@ use Tests\TestCase;
 class SalesOrderCompletionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app(AccountingAccountSeeder::class)->run();
+    }
 
     public function test_sale_completion_deducts_finished_stock_and_generates_reference(): void
     {
