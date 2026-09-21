@@ -58,6 +58,7 @@ class AccountingController extends Controller
                 'lines.account',
                 'postedBy',
                 'source',
+                'reversalOf',
             ])
             ->latest('entry_date')
             ->latest('id')
