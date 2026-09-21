@@ -44,4 +44,9 @@ class PurchaseReceipt extends Model
     {
         return $this->morphMany(JournalEntry::class, 'source');
     }
+
+    public function supplierPayments(): HasMany
+    {
+        return $this->hasMany(SupplierPayment::class);
+    }
 }
