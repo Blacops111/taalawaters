@@ -84,8 +84,8 @@ class AccountingFoundationTest extends TestCase
         $this->assertSame(SalesOrder::class, $entry->source_type);
         $this->assertSame($sale->id, $entry->source_id);
         $this->assertSame($sale->id, $entry->source->id);
-        $this->assertSame('1500.00', $entry->lines->sum('debit'));
-        $this->assertSame('1500.00', $entry->lines->sum('credit'));
+        $this->assertSame(1500.0, (float) $entry->lines->sum('debit'));
+        $this->assertSame(1500.0, (float) $entry->lines->sum('credit'));
 
         $this->assertDatabaseHas('journal_lines', [
             'journal_entry_id' => $entry->id,
