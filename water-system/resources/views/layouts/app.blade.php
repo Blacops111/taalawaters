@@ -348,6 +348,12 @@
                             <span>Journal Entries</span>
                         </a>
                         <a
+                            href="{{ route('accounting.trial-balance') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.trial-balance') ? 'active' : '' }}"
+                        >
+                            <span>Trial Balance</span>
+                        </a>
+                        <a
                             href="{{ route('accounting.supplier-payments') }}"
                             class="taala-menu-link {{ request()->routeIs('accounting.supplier-payments*') ? 'active' : '' }}"
                         >

@@ -2,9 +2,25 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are now implemented and await local migration, focused tests and browser verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is now implemented and awaits local tests and browser verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
 
-## Latest increment — Customer Payments / Accounts Receivable
+## Latest increment — Trial Balance
+
+Accounting → Trial Balance shows net debit or credit balances per account as of an inclusive journal date, plus totals and an imbalance indicator. Only posted journals are included. Reversals offset their originals on their own entry dates. Inactive accounts and direct postings to parent accounts remain included; child balances are not rolled into parent rows or double-counted. Accounts with posted activity and a zero net balance remain visible.
+
+No migration or seeding is required. Run from `water-system/`:
+
+```bash
+php artisan test --filter=TrialBalance
+php artisan test --filter=JournalEntryHistory
+php artisan test --filter=CustomerPaymentAccounting
+php artisan test --filter=SupplierPaymentAccounting
+```
+
+PHP is unavailable in the authoring environment; automated Laravel execution is pending locally. Static syntax and diff checks are performed before publishing. In the browser, check a date with posted sales/purchases/payments, confirm equal debit and credit totals, and move the date before a transaction to check the cutoff. This increment adds the on-screen report; financial completeness still depends on all required transactions being posted.
+
+## Customer Payments / Accounts Receivable — verified
+
 
 Accounting → Customer Payments records receipts against completed business sales with one posted, unreversed sales journal. Each payment posts **Dr 1100 Cash on Hand or 1110 Bank Account / Cr 1200 Accounts Receivable**. It does not post revenue again or change inventory.
 
@@ -27,7 +43,7 @@ php artisan test --filter=SalesOrderReversal
 php artisan test --filter=SupplierPaymentAccounting
 ```
 
-The repository's PHPUnit configuration uses an in-memory SQLite database. These tests do not substitute for applying the migration and checking the workflow on local MySQL. No test pass is claimed for this increment until those commands have been run.
+The repository's PHPUnit configuration uses an in-memory SQLite database. These tests do not substitute for applying the migration and checking the workflow on local MySQL. The project owner confirmed the migration, all four test groups (38 tests / 269 assertions), and customer-payment browser verification.
 
 For browser verification, complete a fresh business sale and record a partial payment under Accounting → Customer Payments. Check its remaining balance and linked journal under Accounting → Journal Entries, searching for the `CPAY` reference. Settle the remainder using the other receiving account; confirm it leaves the outstanding list. Check that an overpayment is rejected and a paid sale cannot be reversed. Stock and revenue must remain unchanged by payments.
 

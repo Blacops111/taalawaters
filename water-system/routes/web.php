@@ -62,6 +62,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
         ->name('accounting.accounts');
 
+    Route::get('/accounting/trial-balance', [AccountingController::class, 'trialBalance'])
+        ->name('accounting.trial-balance');
+
     Route::get('/accounting/journals', [AccountingController::class, 'journals'])
         ->name('accounting.journals');
 

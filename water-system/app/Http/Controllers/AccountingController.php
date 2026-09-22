@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AccountingAccount;
 use App\Models\JournalEntry;
+use App\Services\TrialBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -18,6 +19,17 @@ class AccountingController extends Controller
             ->get();
 
         return view('accounting.accounts', compact('accounts'));
+    }
+
+    public function trialBalance(Request $request, TrialBalanceService $service): View
+    {
+        $validated = $request->validate([
+            'as_of' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        return view('accounting.trial-balance', $service->report(
+            $validated['as_of'] ?? now()->toDateString(),
+        ));
     }
 
     public function journals(Request $request): View
