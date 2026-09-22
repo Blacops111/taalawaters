@@ -2,9 +2,25 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is now implemented and awaits local tests and browser verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is implemented and awaits local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
 
-## Latest increment — Trial Balance
+## Latest increment — Balance Sheet
+
+Accounting → Balance Sheet groups posted balances into assets, liabilities and equity at an inclusive journal date, reusing the verified Trial Balance calculation. It adds unclosed revenue less expenses to recorded equity and checks assets equal liabilities plus equity. Negative balances/losses are preserved. Posted closing entries reduce unclosed earnings while increasing recorded equity, avoiding double counting. No fiscal-year boundary is assumed.
+
+This is a read-only, on-screen report. It does not create closing entries, opening balances, inventory valuation or missing expense/COGS postings. Completeness depends on the recorded journals.
+
+No migration or seeding is needed. Run from `water-system/`:
+
+```bash
+php artisan test --filter=BalanceSheet
+php artisan test --filter=TrialBalance
+php artisan test --filter=JournalEntryHistory
+```
+
+Static syntax and diff checks are performed before publishing. PHP is unavailable here, so Laravel tests and local browser verification remain pending. Check the same date in Balance Sheet and Trial Balance, verify the equation and earnings, then move the cutoff before a known transaction.
+
+## Trial Balance — verified
 
 Accounting → Trial Balance shows net debit or credit balances per account as of an inclusive journal date, plus totals and an imbalance indicator. Only posted journals are included. Reversals offset their originals on their own entry dates. Inactive accounts and direct postings to parent accounts remain included; child balances are not rolled into parent rows or double-counted. Accounts with posted activity and a zero net balance remain visible.
 
@@ -17,7 +33,7 @@ php artisan test --filter=CustomerPaymentAccounting
 php artisan test --filter=SupplierPaymentAccounting
 ```
 
-PHP is unavailable in the authoring environment; automated Laravel execution is pending locally. Static syntax and diff checks are performed before publishing. In the browser, check a date with posted sales/purchases/payments, confirm equal debit and credit totals, and move the date before a transaction to check the cutoff. This increment adds the on-screen report; financial completeness still depends on all required transactions being posted.
+The project owner confirmed all 10 Trial Balance tests (69 assertions) and browser verification after the inclusive SQLite date-cutoff fix. In the browser, check a date with posted sales/purchases/payments, confirm equal debit and credit totals, and move the date before a transaction to check the cutoff. This increment adds the on-screen report; financial completeness still depends on all required transactions being posted.
 
 ## Customer Payments / Accounts Receivable — verified
 

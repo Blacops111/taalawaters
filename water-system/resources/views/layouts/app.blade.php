@@ -354,6 +354,12 @@
                             <span>Trial Balance</span>
                         </a>
                         <a
+                            href="{{ route('accounting.balance-sheet') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.balance-sheet') ? 'active' : '' }}"
+                        >
+                            <span>Balance Sheet</span>
+                        </a>
+                        <a
                             href="{{ route('accounting.supplier-payments') }}"
                             class="taala-menu-link {{ request()->routeIs('accounting.supplier-payments*') ? 'active' : '' }}"
                         >
