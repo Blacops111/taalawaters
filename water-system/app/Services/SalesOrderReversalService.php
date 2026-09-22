@@ -59,6 +59,13 @@ class SalesOrderReversalService
                 ]);
             }
 
+            // Payment recording takes this same sale lock, preventing payment/reversal races.
+            if ($lockedOrder->customerPayments()->exists()) {
+                throw ValidationException::withMessages([
+                    'sales_order' => 'This sale has customer payments and cannot be reversed. Customer payment refunds are not yet supported.',
+                ]);
+            }
+
             $activeDeliveryNote = DeliveryNote::query()
                 ->where('sales_order_id', $lockedOrder->id)
                 ->where('status', '!=', DeliveryNote::STATUS_CANCELLED)

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerPaymentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DriverController;
@@ -69,6 +70,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::post('/accounting/supplier-payments', [SupplierPaymentController::class, 'store'])
         ->name('accounting.supplier-payments.store');
+
+    Route::get('/accounting/customer-payments', [CustomerPaymentController::class, 'index'])
+        ->name('accounting.customer-payments');
+
+    Route::post('/accounting/customer-payments', [CustomerPaymentController::class, 'store'])
+        ->name('accounting.customer-payments.store');
 
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->name('inventory.index');

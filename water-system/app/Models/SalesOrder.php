@@ -27,6 +27,11 @@ class SalesOrder extends Model
         'notes',
     ];
 
+    public function customerPayments(): HasMany
+    {
+        return $this->hasMany(CustomerPayment::class);
+    }
+
     protected function casts(): array
     {
         return [

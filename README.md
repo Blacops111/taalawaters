@@ -2,7 +2,35 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status:** Phase 2 (Inventory & SKU Foundation), Phase 3 (Production Management), and Phase 4 (Sales & Customers) are functionally complete and locally verified. The next planned module is Phase 5 (Purchasing).
+> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are now implemented and await local migration, focused tests and browser verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+
+## Latest increment — Customer Payments / Accounts Receivable
+
+Accounting → Customer Payments records receipts against completed business sales with one posted, unreversed sales journal. Each payment posts **Dr 1100 Cash on Hand or 1110 Bank Account / Cr 1200 Accounts Receivable**. It does not post revenue again or change inventory.
+
+- Partial and multiple payments are supported, with overpayment protection based on the original posted receivable.
+- Payments record a `CPAY-########` reference, sale, customer, receiving account, date, external reference, user and notes.
+- Payment and journal creation are atomic. Sale locking serializes payment recording with other payments and sale reversal.
+- Repeating the same form submission returns the original payment rather than posting it twice.
+- Outstanding sales and payment history are paginated. Existing debts remain payable if a customer is deactivated.
+- Sales with customer payments cannot be reversed in this increment. Refunds/payment reversals require a separate audited workflow and are not implemented yet.
+
+New migration: `water-system/database/migrations/2026_09_22_000100_create_customer_payments_table.php`.
+
+From `water-system/`, after syncing the development branch:
+
+```bash
+php artisan migrate
+php artisan test --filter=CustomerPaymentAccounting
+php artisan test --filter=SalesOrderAccounting
+php artisan test --filter=SalesOrderReversal
+php artisan test --filter=SupplierPaymentAccounting
+```
+
+The repository's PHPUnit configuration uses an in-memory SQLite database. These tests do not substitute for applying the migration and checking the workflow on local MySQL. No test pass is claimed for this increment until those commands have been run.
+
+For browser verification, complete a fresh business sale and record a partial payment under Accounting → Customer Payments. Check its remaining balance and linked journal under Accounting → Journal Entries, searching for the `CPAY` reference. Settle the remainder using the other receiving account; confirm it leaves the outstanding list. Check that an overpayment is rejected and a paid sale cannot be reversed. Stock and revenue must remain unchanged by payments.
+
 
 ## Project goals
 

@@ -17,6 +17,11 @@ class Customer extends Model
         'is_active',
     ];
 
+    public function customerPayments(): HasMany
+    {
+        return $this->hasMany(CustomerPayment::class);
+    }
+
     protected function casts(): array
     {
         return [
