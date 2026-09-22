@@ -15,7 +15,9 @@ class TrialBalanceService
             ->join('journal_entries as entries', 'entries.id', '=', 'lines.journal_entry_id')
             ->join('accounting_accounts as accounts', 'accounts.id', '=', 'lines.accounting_account_id')
             ->where('entries.status', JournalEntry::STATUS_POSTED)
-            ->where('entries.entry_date', '<=', $asOf)
+            // SQLite may retain midnight timestamps for Eloquent date casts.
+            // Compare calendar dates so entries on the cutoff day are included.
+            ->whereDate('entries.entry_date', '<=', $asOf)
             ->groupBy('accounts.id', 'accounts.code', 'accounts.name', 'accounts.type', 'accounts.is_active')
             ->orderBy('accounts.code')
             ->select('accounts.id', 'accounts.code', 'accounts.name', 'accounts.type', 'accounts.is_active')
