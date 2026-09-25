@@ -71,7 +71,7 @@
                             @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
-                    <p class="small text-muted mt-3">Review before posting. Recorded expenses cannot be edited or deleted; expense reversals are not available yet.</p>
+                    <p class="small text-muted mt-3">Review before posting. Recorded expenses cannot be edited or deleted; corrections use the Reverse action in Expense History.</p>
                     <button type="submit" class="btn btn-primary">Record & Post Expense</button>
                 </form>
             @endif
@@ -82,7 +82,7 @@
         <div class="card-header bg-white"><h5 class="mb-0">Expense History</h5></div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light"><tr><th>Reference / Date</th><th>Expense</th><th>Paid From</th><th>Payee / Receipt</th><th>Recorded By</th><th class="text-end">Amount (KES)</th></tr></thead>
+                <thead class="table-light"><tr><th>Reference / Date</th><th>Expense</th><th>Paid From</th><th>Payee / Receipt</th><th>Recorded By</th><th class="text-end">Amount (KES)</th><th>Status / Action</th></tr></thead>
                 <tbody>
                     @forelse($expenses as $expense)
                         <tr>
@@ -92,9 +92,20 @@
                             <td>{{ $expense->payee ?: '—' }}<div class="small text-muted">{{ $expense->external_reference ?: '—' }}</div></td>
                             <td>{{ $expense->creator?->name }}</td>
                             <td class="text-end">{{ number_format((float) $expense->amount, 2) }}</td>
+                            <td>
+                                @if($expense->reversal)
+                                    <span class="badge bg-secondary">Reversed</span>
+                                    <div><a href="{{ route('accounting.journals', ['search' => $expense->reversal->reference]) }}">{{ $expense->reversal->reference }}</a></div>
+                                    <div class="small">{{ $expense->reversal->reversal_date->format('Y-m-d') }} · {{ $expense->reversal->reversedBy?->name }}</div>
+                                    <div class="small text-muted">{{ $expense->reversal->reason }}</div>
+                                @else
+                                    <span class="badge bg-success">Posted</span>
+                                    <a class="btn btn-sm btn-outline-danger mt-1" href="{{ route('accounting.expenses.reversal', $expense) }}">Reverse</a>
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center text-muted py-4">No expenses recorded yet.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4">No expenses recorded yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

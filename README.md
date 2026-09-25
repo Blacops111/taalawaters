@@ -2,13 +2,31 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expense recording is implemented and awaits local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expenses are locally verified: 12 tests / 138 assertions, with Trial Balance and Balance Sheet regressions giving 32 tests / 282 assertions total, followed by browser verification. Expense reversals now await local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
 
-## Latest increment — Operating Expenses
+## Latest increment — Expense Reversal
+
+Expense History now offers a confirmation page to reverse a mistaken expense with a required reason and reversal date. It posts the exact opposite of the original journal, including its account IDs and amounts, and links both journals. It preserves the immutable expense and adds an immutable `REV-EXP-########` audit record with the user, timestamp and reason. A reversal cannot precede the original expense/journal date. Earlier reports retain the expense; reports from the reversal date include the offset.
+
+Duplicate reversals, missing/ambiguous or mismatched original journals are rejected. Posting and audit creation roll back together. Original accounts can be reversed after deactivation. This corrects accounting only; it does not move money or issue a refund. Expense history shows the reversal date and reason and links to the reversal journal.
+
+New migration: `water-system/database/migrations/2026_09_25_000200_create_operating_expense_reversals_table.php`.
+
+```bash
+php artisan migrate
+php artisan test --filter=OperatingExpenseReversal
+php artisan test --filter=OperatingExpenseAccounting
+php artisan test --filter=TrialBalance
+php artisan test --filter=BalanceSheet
+```
+
+PHP is unavailable in the authoring environment, so Laravel execution remains pending locally. Static PHP syntax and diff checks are performed before publishing. Browser verification: reverse a test expense with a reason, inspect the opposite journal and unchanged original, confirm its Reversed status, then compare reports before and on the reversal date.
+
+## Operating Expenses — verified
 
 Accounting → Expenses records immediately paid operating costs against existing accounts 5200 Fuel and Transport, 5300 Utilities, 5400 Repairs and Maintenance, or 5500 General Operating Expense. Each expense posts **Dr selected expense / Cr 1100 Cash on Hand or 1110 Bank Account** atomically, with an `EXP-########` reference and links to its journal. Date, description, payee, receipt/payment reference, notes and recording user are retained in paginated history.
 
-The form has duplicate-submission protection scoped to the recording user. Fresh submissions can record separate legitimate expenses with identical amounts or descriptions. Recorded expenses are read-only; audited expense reversals are a later increment. Inventory purchases, supplier credit bills and COGS are not entered through this form. No inventory movement or second revenue posting is created. The existing report calculations include the new journals automatically.
+The form has duplicate-submission protection scoped to the recording user. Fresh submissions can record separate legitimate expenses with identical amounts or descriptions. Recorded expenses are read-only; corrections now use the audited expense reversal workflow. Inventory purchases, supplier credit bills and COGS are not entered through this form. No inventory movement or second revenue posting is created. The existing report calculations include the new journals automatically.
 
 New migration: `water-system/database/migrations/2026_09_25_000100_create_operating_expenses_table.php`.
 
@@ -21,7 +39,7 @@ php artisan test --filter=TrialBalance
 php artisan test --filter=BalanceSheet
 ```
 
-Static syntax and diff checks are performed before publishing. Laravel tests cannot run in the authoring environment because PHP is unavailable; local migration, tests and browser verification remain pending. In the browser, record an example such as a KES 125.75 fuel expense, inspect its expense debit and Cash/Bank credit in Journal Entries, and compare report balances before and on its date. Earnings and Cash/Bank should decrease by the expense amount while the accounting equation remains balanced. An expense does not consume inventory.
+The project owner confirmed the expense migration, 32 tests / 282 assertions including report regressions, and browser verification. In the browser, record an example such as a KES 125.75 fuel expense, inspect its expense debit and Cash/Bank credit in Journal Entries, and compare report balances before and on its date. Earnings and Cash/Bank should decrease by the expense amount while the accounting equation remains balanced. An expense does not consume inventory.
 
 ## Balance Sheet — verified
 

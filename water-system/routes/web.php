@@ -66,6 +66,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/accounting/expenses', [OperatingExpenseController::class, 'store'])
         ->name('accounting.expenses.store');
 
+    Route::get('/accounting/expenses/{operatingExpense}/reversal', [OperatingExpenseController::class, 'reversal'])
+        ->name('accounting.expenses.reversal');
+
+    Route::post('/accounting/expenses/{operatingExpense}/reversal', [OperatingExpenseController::class, 'reverse'])
+        ->name('accounting.expenses.reverse');
+
     Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
         ->name('accounting.accounts');
 
