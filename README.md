@@ -2,9 +2,28 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is implemented and awaits local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expense recording is implemented and awaits local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
 
-## Latest increment — Balance Sheet
+## Latest increment — Operating Expenses
+
+Accounting → Expenses records immediately paid operating costs against existing accounts 5200 Fuel and Transport, 5300 Utilities, 5400 Repairs and Maintenance, or 5500 General Operating Expense. Each expense posts **Dr selected expense / Cr 1100 Cash on Hand or 1110 Bank Account** atomically, with an `EXP-########` reference and links to its journal. Date, description, payee, receipt/payment reference, notes and recording user are retained in paginated history.
+
+The form has duplicate-submission protection scoped to the recording user. Fresh submissions can record separate legitimate expenses with identical amounts or descriptions. Recorded expenses are read-only; audited expense reversals are a later increment. Inventory purchases, supplier credit bills and COGS are not entered through this form. No inventory movement or second revenue posting is created. The existing report calculations include the new journals automatically.
+
+New migration: `water-system/database/migrations/2026_09_25_000100_create_operating_expenses_table.php`.
+
+From `water-system/`, after syncing:
+
+```bash
+php artisan migrate
+php artisan test --filter=OperatingExpenseAccounting
+php artisan test --filter=TrialBalance
+php artisan test --filter=BalanceSheet
+```
+
+Static syntax and diff checks are performed before publishing. Laravel tests cannot run in the authoring environment because PHP is unavailable; local migration, tests and browser verification remain pending. In the browser, record an example such as a KES 125.75 fuel expense, inspect its expense debit and Cash/Bank credit in Journal Entries, and compare report balances before and on its date. Earnings and Cash/Bank should decrease by the expense amount while the accounting equation remains balanced. An expense does not consume inventory.
+
+## Balance Sheet — verified
 
 Accounting → Balance Sheet groups posted balances into assets, liabilities and equity at an inclusive journal date, reusing the verified Trial Balance calculation. It adds unclosed revenue less expenses to recorded equity and checks assets equal liabilities plus equity. Negative balances/losses are preserved. Posted closing entries reduce unclosed earnings while increasing recorded equity, avoiding double counting. No fiscal-year boundary is assumed.
 
@@ -18,7 +37,7 @@ php artisan test --filter=TrialBalance
 php artisan test --filter=JournalEntryHistory
 ```
 
-Static syntax and diff checks are performed before publishing. PHP is unavailable here, so Laravel tests and local browser verification remain pending. Check the same date in Balance Sheet and Trial Balance, verify the equation and earnings, then move the cutoff before a known transaction.
+The project owner confirmed Balance Sheet tests (10 / 75 assertions), related report checks (23 / 159 assertions total) and browser verification. A local page timeout stopped after clearing cached application state. Check the same date in Balance Sheet and Trial Balance, verify the equation and earnings, then move the cutoff before a known transaction.
 
 ## Trial Balance — verified
 

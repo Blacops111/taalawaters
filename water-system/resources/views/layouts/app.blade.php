@@ -371,6 +371,12 @@
                         >
                             <span>Customer Payments</span>
                         </a>
+                        <a
+                            href="{{ route('accounting.expenses') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.expenses*') ? 'active' : '' }}"
+                        >
+                            <span>Expenses</span>
+                        </a>
                     </div>
 
                     <div class="taala-menu-section">

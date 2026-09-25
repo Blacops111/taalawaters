@@ -8,6 +8,7 @@ use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\DriverDeliveryController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\OperatingExpenseController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionRecipeController;
 use App\Http\Controllers\ProductionRunController;
@@ -58,6 +59,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin-test', function () {
         return 'Admin Access Granted';
     });
+
+    Route::get('/accounting/expenses', [OperatingExpenseController::class, 'index'])
+        ->name('accounting.expenses');
+
+    Route::post('/accounting/expenses', [OperatingExpenseController::class, 'store'])
+        ->name('accounting.expenses.store');
 
     Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
         ->name('accounting.accounts');
