@@ -35,7 +35,8 @@ class OperatingExpenseReversalTest extends TestCase
     public function test_admin_can_reverse_exact_cash_journal_and_preserve_original_history(): void
     {
         $expense = $this->expense();
-        $before = $expense->getAttributes();
+        // Compare persisted snapshots: SQLite normalizes numeric types and column order on reload.
+        $before = $expense->fresh()->getAttributes();
         $original = $expense->journalEntries()->with('lines')->sole();
         $journalBefore = $original->toArray();
         $this->actingAs($this->admin)->get(route('accounting.expenses.reversal', $expense))
