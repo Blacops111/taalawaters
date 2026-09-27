@@ -17,6 +17,7 @@ class WaterMeterReadingService
     public function ingest(WaterMeter $meter, array $payload): array
     {
         return DB::transaction(function () use ($meter, $payload) {
+            InventoryCostingService::lock();
             $lockedMeter = WaterMeter::query()
                 ->whereKey($meter->id)
                 ->lockForUpdate()

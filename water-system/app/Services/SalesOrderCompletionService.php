@@ -15,6 +15,7 @@ class SalesOrderCompletionService
     public function complete(SalesOrder $salesOrder, User $user): SalesOrder
     {
         return DB::transaction(function () use ($salesOrder, $user) {
+            InventoryCostingService::lock();
             $lockedOrder = SalesOrder::query()
                 ->lockForUpdate()
                 ->findOrFail($salesOrder->id);

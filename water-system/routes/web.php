@@ -75,6 +75,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
         ->name('accounting.accounts');
 
+    Route::get('/accounting/inventory-costing', [\App\Http\Controllers\InventoryCostingController::class, 'index'])->name('accounting.inventory-costing');
+    Route::post('/accounting/inventory-costing/preview', [\App\Http\Controllers\InventoryCostingController::class, 'preview'])->name('accounting.inventory-costing.preview');
+    Route::post('/accounting/inventory-costing/activate', [\App\Http\Controllers\InventoryCostingController::class, 'activate'])->name('accounting.inventory-costing.activate');
+
     Route::get('/accounting/profit-loss', [AccountingController::class, 'profitLoss'])
         ->name('accounting.profit-loss');
 

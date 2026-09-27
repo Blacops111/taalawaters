@@ -38,6 +38,7 @@ class ProductionRunReversalService
             $reason,
             $reversedAtUtc
         ) {
+            InventoryCostingService::lock();
             $lockedRun = ProductionRun::query()
                 ->whereKey($productionRun->id)
                 ->lockForUpdate()
@@ -163,6 +164,7 @@ class ProductionRunReversalService
 
                 StockMovement::create([
                     'inventory_item_id' => $movement->inventory_item_id,
+                    'reverses_movement_id' => $movement->id,
                     'movement_type' => $movementType,
                     'quantity_delta' => $quantityDelta,
                     'source_type' => ProductionRunReversal::class,

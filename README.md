@@ -2,9 +2,42 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (25 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expenses are locally verified: 12 tests / 138 assertions, with Trial Balance and Balance Sheet regressions giving 32 tests / 282 assertions total, followed by browser verification. Expense reversals are locally verified: 10 tests / 100 assertions and browser verification passed. Profit & Loss now awaits local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+> **Current development status (27 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expenses are locally verified: 12 tests / 138 assertions, with Trial Balance and Balance Sheet regressions giving 32 tests / 282 assertions total, followed by browser verification. Expense reversals are locally verified: 10 tests / 100 assertions and browser verification passed. Profit & Loss is locally verified: 10 tests / 65 assertions and browser verification passed; its related expense reversal and balance sheet checks also passed. Inventory material costing and automatic COGS now await local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
 
-## Latest increment — Profit & Loss
+## Latest increment — Moving weighted-average inventory material costing
+
+Accounting → Inventory Costing adds an explicit, admin-only activation workflow. Before activation, existing operations retain their previous accounting behavior. New goods receipts preserve approved unit cost and rounded receipt-value snapshots immediately. No historical receipt costs are guessed or backfilled.
+
+The setup lists all current items, including inactive items, and requires approved opening **total values**, a valuation reason, and an explicit choice of opening reconciliation account (3100 Owner Capital or 3200 Retained Earnings). A confirmation screen previews the exact difference from existing account 1300. Activation snapshots quantities/values and posts only that difference, atomically. Unchanged values produce no journal. Changed stock/items/ledger, negative stock, future-dated inventory, missing accounts and duplicate activation are rejected. Existing quantities, journals and histories remain intact. Activation is prospective and cannot be undone or overwritten through the UI.
+
+After activation:
+
+- Approved partial goods receipts add their recorded quantity/value to the weighted average; purchase journals remain Dr 1300 / Cr 2100 without a duplicate debit.
+- Production consumes materials at current average cost and transfers the same value to finished stock. No net journal is required for a transfer within account 1300.
+- Sales include Dr 5100 COGS / Cr 1300 Inventory in the **same journal** as revenue. Business receivables and customer payments retain the one-journal invariant.
+- Sale reversals restore the original quantity/value and reverse all original journal lines. Production reversals restore original costs only when no subsequent movements exist for any input/output item; otherwise a reviewed correction is required.
+- Damage/wastage/decreases post Dr 5500 / Cr 1300. Positive corrections use the existing average and post Dr 1300 / Cr 5500; increases from empty stock are blocked because no cost is known. New physical supplies use approved Goods Receiving; legacy manual opening/receipt forms cannot bypass costing.
+- Costs use Brick Math decimal arithmetic (already installed through the locked Laravel dependencies), integer thousandths for quantities and integer cents for money. The final issue takes residual cents. Costed movements are immutable. A consistent transaction lock serializes stock writes and setup; backdating before an item's latest costed movement is rejected.
+- The page shows current recorded quantity, average cost, valuation, costed movement history and the reconciliation to account 1300. It is a current ledger view, not a historical as-of valuation report.
+
+**Scope and cutover:** This is material costing, not full absorption costing. Setup explicitly approves zero acquisition cost for meter-managed borehole water. Labour, pumping electricity and production overhead remain separately expensed; allocation into inventory is a later increment and must avoid double counting. Resolve corrections to old sales/production before activation: pre-costing movements have no cost snapshot and cannot be automatically reversed after cutover. Approved zero opening values are accepted deliberately; missing values are rejected. A new item with no prior stock starts at zero and acquires value through approved receipts/production. Legacy data is never erased.
+
+New migration: `water-system/database/migrations/2026_09_27_000100_create_inventory_costing.php`.
+
+Run from `water-system/`:
+
+```bash
+php artisan migrate
+php artisan test --filter=InventoryCosting
+php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaymentAccounting|SupplierPaymentAccounting'
+php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
+```
+
+25 focused costing tests were added, including the complete purchase → production → sale path, opening reconciliation, rollback, rounded residuals, cost snapshots, customer payments, reversals and access control. Static PHP parsing and diff checks passed in the authoring environment. PHP is unavailable there, so these Laravel tests and MySQL migration execution **have not been run by the authoring agent** and require local verification.
+
+After tests pass, use a test database to review/activate a known opening valuation. Example: 100 caps worth KES 200; receive another 100 at KES 3. The average becomes KES 2.50. A recipe using one cap per finished unit transfers KES 150 for 60 units (assuming other components have approved zero cost for this example). Selling 20 units posts KES 50 COGS; remaining caps are KES 350 and finished goods KES 100, matching Inventory KES 450. Verify the sale journal, customer payment, reversal, Profit & Loss and the valuation reconciliation. Do not enter invented opening costs in the live database.
+
+## Profit & Loss — verified
 
 Accounting → Profit & Loss displays posted revenue, expenses (including COGS if posted) and net profit/loss for an inclusive date range, defaulting to month-to-date. It aggregates by account in integer cents, includes inactive accounts and direct parent postings without rollup duplication, preserves negative balances, and applies reversals on their journal dates. Payments, capital and inventory purchases do not become revenue/expenses merely because money changed hands. A link opens posted journals for the same period.
 
@@ -18,7 +51,7 @@ php artisan test --filter=OperatingExpenseReversal
 php artisan test --filter=BalanceSheet
 ```
 
-Static syntax and diff checks are performed before publishing. PHP is unavailable in the authoring environment; local Laravel tests and browser verification remain pending. In the browser, compare a known sale and expense against period journals, check revenue minus expenses equals net result, and check that changing the range includes/excludes a transaction on its journal date.
+The project owner confirmed 10 tests / 65 assertions and browser verification. In the browser, compare a known sale and expense against period journals, check revenue minus expenses equals net result, and check that changing the range includes/excludes a transaction on its journal date.
 
 ## Expense Reversal — verified
 

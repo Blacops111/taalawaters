@@ -188,8 +188,9 @@
                         @forelse($purchaseRequest->receipts as $receipt)
                             @php
                                 $receiptValue = $receipt->items->sum(
-                                    fn ($receiptItem) => (float) $receiptItem->quantity
-                                        * (float) ($receiptItem->purchaseRequestItem?->approved_unit_cost ?? 0)
+                                    fn ($receiptItem) => $receiptItem->receipt_value_cents !== null
+                                        ? $receiptItem->receipt_value_cents / 100
+                                        : round((float) $receiptItem->quantity * (float) ($receiptItem->purchaseRequestItem?->approved_unit_cost ?? 0), 2)
                                 );
                             @endphp
                             <tr>
@@ -203,8 +204,8 @@
                                             {{ $receiptItem->inventoryItem->sku }}:
                                             {{ number_format((float) $receiptItem->quantity, 3) }}
                                             {{ $receiptItem->inventoryItem->unit }}
-                                            @if($receiptItem->purchaseRequestItem?->approved_unit_cost !== null)
-                                                @ KES {{ number_format((float) $receiptItem->purchaseRequestItem->approved_unit_cost, 2) }}
+                                            @if(($receiptItem->unit_cost ?? $receiptItem->purchaseRequestItem?->approved_unit_cost) !== null)
+                                                @ KES {{ number_format((float) ($receiptItem->unit_cost ?? $receiptItem->purchaseRequestItem->approved_unit_cost), 2) }}
                                             @endif
                                         </div>
                                     @endforeach

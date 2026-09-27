@@ -98,10 +98,37 @@ class SalesAccountingService
                     'credit' => $amount,
                     'memo' => 'Water sales revenue for '.$salesOrder->reference,
                 ],
+                ...$this->costLines($salesOrder),
             ],
             $salesOrder,
         );
     }
+    private function costLines(SalesOrder $sale): array
+    {
+        $movements = $sale->stockMovements()->where('movement_type', 'sale')->get();
+        $costed = $movements->whereNotNull('value_delta_cents');
+        if ($costed->isEmpty()) {
+            return [];
+        }
+        if ($costed->count() !== $movements->count()) {
+            throw ValidationException::withMessages(['costing' => 'Sale costs are incomplete.']);
+        }
+        $cents = -(int) $costed->sum('value_delta_cents');
+        if ($cents === 0) {
+            return [];
+        }
+        $accounts = AccountingAccount::whereIn('code', ['1300', '5100'])->get()->keyBy('code');
+        foreach (['1300' => 'asset', '5100' => 'expense'] as $code => $type) {
+            if (! isset($accounts[$code]) || ! $accounts[$code]->is_active || $accounts[$code]->type !== $type) {
+                throw ValidationException::withMessages(['costing' => 'Active Inventory and Cost of Goods Sold accounts are required.']);
+            }
+        }
+        return [
+            ['account_id' => $accounts['5100']->id, 'debit' => InventoryCostingService::money($cents), 'credit' => 0, 'memo' => 'Recorded inventory cost of '.$sale->reference],
+            ['account_id' => $accounts['1300']->id, 'debit' => 0, 'credit' => InventoryCostingService::money($cents), 'memo' => 'Inventory released by '.$sale->reference],
+        ];
+    }
+
     public function postSaleReversal(
         SalesOrderReversal $reversal,
         User $user,

@@ -18,14 +18,23 @@ class StockMovement extends Model
         'occurred_at',
         'reference',
         'notes',
+        'value_delta_cents',
+        'reverses_movement_id',
     ];
 
     protected function casts(): array
     {
         return [
+            'value_delta_cents' => 'integer',
+            'reverses_movement_id' => 'integer',
             'quantity_delta' => 'decimal:3',
             'occurred_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::observe(\App\Observers\StockCostObserver::class);
     }
 
     public function inventoryItem(): BelongsTo

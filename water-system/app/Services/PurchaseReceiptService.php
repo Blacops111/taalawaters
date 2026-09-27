@@ -30,6 +30,7 @@ class PurchaseReceiptService
             $supplierDeliveryReference,
             $notes,
         ) {
+            InventoryCostingService::lock();
             $lockedRequest = PurchaseRequest::query()
                 ->whereKey($purchaseRequest->id)
                 ->lockForUpdate()
@@ -141,15 +142,24 @@ class PurchaseReceiptService
                 $requestItem = $line['request_item'];
                 $quantity = $line['quantity'];
 
+                $unitCost = $requestItem->approved_unit_cost;
+                if ($unitCost === null || (float) $unitCost <= 0) {
+                    throw ValidationException::withMessages(['accounting' => 'An approved unit cost is required.']);
+                }
+                $valueCents = InventoryCostingService::receiptValue((string) $quantity, $unitCost);
+
                 $receipt->items()->create([
                     'purchase_request_item_id' => $requestItem->id,
                     'inventory_item_id' => $requestItem->inventory_item_id,
                     'quantity' => $quantity,
+                    'unit_cost' => $unitCost,
+                    'receipt_value_cents' => $valueCents,
                 ]);
 
                 StockMovement::create([
                     'inventory_item_id' => $requestItem->inventory_item_id,
                     'movement_type' => 'purchase_received',
+                    'value_delta_cents' => $valueCents,
                     'quantity_delta' => $quantity,
                     'source_type' => PurchaseReceipt::class,
                     'source_id' => $receipt->id,

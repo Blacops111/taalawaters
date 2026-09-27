@@ -43,6 +43,7 @@ class ProductionRunService
             $occurredAtUtc,
             $notes
         ) {
+            InventoryCostingService::lock();
             $lockedRecipe = ProductionRecipe::query()
                 ->whereKey($recipe->id)
                 ->lockForUpdate()

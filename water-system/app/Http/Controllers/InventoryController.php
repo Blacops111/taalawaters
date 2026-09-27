@@ -144,6 +144,7 @@ class InventoryController extends Controller
         ]);
 
         DB::transaction(function () use ($validated) {
+            \App\Services\InventoryCostingService::lock();
             $item = InventoryItem::query()
                 ->whereKey($validated['inventory_item_id'])
                 ->where('is_active', true)
@@ -245,6 +246,7 @@ class InventoryController extends Controller
         ]);
 
         DB::transaction(function () use ($validated) {
+            \App\Services\InventoryCostingService::lock();
             $item = InventoryItem::query()
                 ->whereKey($validated['inventory_item_id'])
                 ->where('is_active', true)

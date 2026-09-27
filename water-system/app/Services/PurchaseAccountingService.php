@@ -86,7 +86,7 @@ class PurchaseAccountingService
 
         foreach ($receipt->items as $receiptItem) {
             $requestItem = $receiptItem->purchaseRequestItem;
-            $unitCost = $requestItem?->approved_unit_cost;
+            $unitCost = $receiptItem->unit_cost ?? $requestItem?->approved_unit_cost;
 
             if ($unitCost === null || (float) $unitCost <= 0) {
                 throw ValidationException::withMessages([
@@ -94,11 +94,8 @@ class PurchaseAccountingService
                 ]);
             }
 
-            $lineCents = (int) round(
-                (float) $receiptItem->quantity
-                * (float) $unitCost
-                * 100
-            );
+            $lineCents = $receiptItem->receipt_value_cents
+                ?? InventoryCostingService::receiptValue($receiptItem->quantity, $unitCost);
 
             if ($lineCents <= 0) {
                 throw ValidationException::withMessages([

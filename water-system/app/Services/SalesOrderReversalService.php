@@ -40,6 +40,7 @@ class SalesOrderReversalService
             $reason,
             $reversedAtUtc,
         ) {
+            InventoryCostingService::lock();
             $lockedOrder = SalesOrder::query()
                 ->whereKey($salesOrder->id)
                 ->lockForUpdate()
@@ -178,6 +179,7 @@ class SalesOrderReversalService
             foreach ($originalMovements as $movement) {
                 StockMovement::create([
                     'inventory_item_id' => $movement->inventory_item_id,
+                    'reverses_movement_id' => $movement->id,
                     'movement_type' => 'sale_reversal_restore',
                     'quantity_delta' => abs((float) $movement->quantity_delta),
                     'source_type' => SalesOrderReversal::class,
