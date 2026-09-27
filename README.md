@@ -2,7 +2,42 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (27 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expenses are locally verified: 12 tests / 138 assertions, with Trial Balance and Balance Sheet regressions giving 32 tests / 282 assertions total, followed by browser verification. Expense reversals are locally verified: 10 tests / 100 assertions and browser verification passed. Profit & Loss is locally verified: 10 tests / 65 assertions and browser verification passed; its related expense reversal and balance sheet checks also passed. Inventory material costing and automatic COGS now await local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+## Current checkpoint — 27 September 2026
+
+**Phase 7 (Accounting) is in progress.** The latest implementation is moving weighted-average material costing and automatic sales COGS, published in commit `e41beff` on `taala-v2-development`. It is implemented but **not yet locally verified or confirmed activated**. Pulling the branch and running its migration leaves costing inactive until the admin approves opening values.
+
+| Area | Latest confirmed status |
+| --- | --- |
+| Inventory, production, sales and customers | Earlier verified V2 milestones; run the new costing regressions before treating those integrations as verified |
+| Purchasing and delivery workflows | Implemented; suppliers, purchase approvals/receiving, drivers, vehicles, assignments and delivery notes are present |
+| Goods receipt accounting | Owner confirmed 4 tests / 25 assertions and browser verification |
+| Supplier payments | Owner confirmed 4 tests / 33 assertions and browser verification |
+| Customer payments | Owner confirmed 14 tests / 121 assertions and browser verification |
+| Trial Balance | Owner confirmed 10 tests / 69 assertions and browser verification |
+| Balance Sheet | Owner confirmed 10 tests / 75 assertions and browser verification |
+| Operating expenses | Owner confirmed 12 tests / 138 assertions and browser verification |
+| Expense reversals | Owner confirmed 10 tests / 100 assertions and browser verification |
+| Profit & Loss | Owner confirmed 10 tests / 65 assertions and browser verification |
+| Inventory material costing and automatic COGS | 25 focused tests added; static checks passed; local migration, Laravel tests and browser verification pending |
+
+These are focused milestone results, not a combined current full-suite result. The 123-test / 615-assertion result documented later is the historical **16 September** baseline.
+
+### Resume here
+
+1. From `water-system/`, sync the branch and run the commands below.
+2. Review the new costing test and regression results; fix any failures before browser activation.
+3. On a test database, open **Accounting → Inventory Costing**, review real opening quantities/values and the reconciliation preview, then verify a receipt → production → sale example against Journal Entries and financial reports.
+4. Confirm the valuation matches account 1300 and that sale costs post **Dr 5100 COGS / Cr 1300 Inventory**. Record the test counts and browser outcome here when confirmed.
+5. Only then agree the next small increment. Production labour/electricity allocation, broader V2 reporting, hardening and deployment remain future work.
+
+```bash
+git fetch origin taala-v2-development
+git merge --ff-only FETCH_HEAD
+php artisan migrate
+php artisan test --filter=InventoryCosting
+php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaymentAccounting|SupplierPaymentAccounting'
+php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
+```
 
 ## Latest increment — Moving weighted-average inventory material costing
 
@@ -470,6 +505,24 @@ A reversal:
 
 The reversal flow has been verified both automatically and manually against real local stock balances.
 
+## Phase 5 — Purchasing
+
+Status: **Implemented; receipt accounting and supplier settlements locally verified**
+
+Supplier records, purchase requests/items, submission and approval/rejection, approved unit costs, partial goods receiving and receipt history are implemented. Receiving updates the V2 stock ledger and posts Inventory / Accounts Payable. Supplier payments settle the payable through Cash or Bank. The new costing integration still requires the regression checks listed above.
+
+## Phase 6 — Deliveries / Vehicles / Drivers
+
+Status: **Workflows implemented**
+
+V2 includes drivers, vehicles, driver–vehicle assignments, delivery notes/items, dispatch, linked driver login accounts and driver delivery confirmation. These replace the earlier plan to extend only the legacy Truck module. This checkpoint does not claim physical deployment or a new full logistics verification run.
+
+## Phase 7 — Accounting
+
+Status: **In progress**
+
+Chart of Accounts, journal posting/history, sales and goods receipt accounting, supplier/customer payments, operating expenses and expense reversals are implemented. Trial Balance, Balance Sheet and Profit & Loss have passed the owner's focused tests and browser checks. Material costing and automatic COGS are the current unverified increment; implementation details, limitations and activation instructions are above.
+
 ## Taala Crystal branding
 
 The visible system branding now uses **Taala Crystal** rather than the earlier “Taala Water System” name.
@@ -490,7 +543,7 @@ The dashboard still contains legacy commercial metrics/charts in addition to the
 
 ### Trucks / logistics
 
-A starter Truck module exists, but future V2 logistics will use a more flexible structure supporting motorbikes and tanker trucks.
+The legacy Truck module remains present. V2 now has separate drivers, vehicles, assignments and delivery-note workflows; use those for V2 logistics.
 
 ## V2 database areas introduced so far
 
@@ -507,6 +560,25 @@ customers
 sales_orders
 sales_order_items
 sales_order_reversals
+suppliers
+purchase_requests
+purchase_request_items
+purchase_receipts
+purchase_receipt_items
+drivers
+vehicles
+vehicle_assignments
+delivery_notes
+delivery_note_items
+accounting_accounts
+journal_entries
+journal_lines
+supplier_payments
+customer_payments
+operating_expenses
+operating_expense_reversals
+inventory_costing_setups
+inventory_cost_balances
 ```
 
 ## Installation / local setup
@@ -557,7 +629,7 @@ php artisan test --filter=SalesOrderReversal
 php artisan test --filter=TaalaCrystalBranding
 ```
 
-### Latest full regression result
+### Historical full regression baseline — 16 September 2026
 
 Verified locally on **16 September 2026**:
 
@@ -567,7 +639,7 @@ Assertions: 615
 Duration:   30.23s
 ```
 
-This complete suite covers authentication, inventory, water-meter ingestion, production, production reversal, customer management, sales pricing, draft sales, stock deduction, sales history/details, PDF/Excel reporting, sale reversal and Taala Crystal branding.
+That baseline predates purchasing, logistics, accounting and inventory costing. It is not evidence that the current branch passes its full suite. The baseline covered authentication, inventory, water-meter ingestion, production, production reversal, customer management, sales pricing, draft sales, stock deduction, sales history/details, PDF/Excel reporting, sale reversal and Taala Crystal branding.
 
 To run the complete suite:
 
@@ -630,37 +702,22 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 - Add focused tests for stock, financial and authorization behavior.
 - Fix errors before moving to the next module.
 
-## Next planned work — Phase 5: Purchasing
+## Next work — Verify inventory material costing
 
-Phase 5 will be started only after the current Phase 4 milestone is intentionally closed and development resumes.
+The immediate task is local verification of commit `e41beff`, using the migration and focused/regression commands in **Resume here**. Costing remains inactive until opening valuations are reviewed and approved in the UI. Do not mark this milestone complete until the owner confirms both automated tests and browser behavior.
 
-Planned purchasing work includes:
+The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water uses an explicitly approved zero acquisition cost, while labour, pumping electricity and other overhead remain separately expensed. Allocating those costs into inventory is not implemented yet.
 
-- purchase requests
-- supplier records
-- purchase approval flow
-- purchased-material receiving integration
-- audit history
-- links between purchases and V2 inventory receipts
+## Remaining roadmap
 
-Exact business rules will be confirmed incrementally before implementation.
-
-## Future roadmap after Purchasing
-
-- delivery notes
-- drivers
-- vehicles / motorbikes / tanker trucks
-- delivery tracking
-- accounting integration
-- trial balance
-- balance sheet
-- richer V2 dashboard/reports
-- expanded role permissions
-- security hardening
-- performance testing
-- backups / monitoring
-- production deployment
+- Production labour/electricity/overhead allocation with no double counting of existing expenses.
+- Historical inventory valuation and additional accounting exports/period-closing workflows, as agreed.
+- Phase 8: V2 dashboard and broader management reporting; existing accounting reports are already implemented.
+- Phase 9: expanded role permissions and security hardening.
+- Phase 10: current full-suite verification, performance/load testing, backups, monitoring and deployment.
+- Physical meter integration once the real device communication method and flow characteristics are known.
+- Legacy data migration/removal only after explicit cutover rules are agreed.
 
 ## Project status note
 
-This README reflects the `taala-v2-development` branch status as of **16 September 2026**. Phase 2, Phase 3 and Phase 4 are verified milestones. The full regression suite currently passes with **123 tests and 615 assertions**. Phase 5 (Purchasing) is next when development resumes.
+This README reflects the `taala-v2-development` checkpoint as of **27 September 2026**. Profit & Loss is the latest owner-verified accounting milestone. Moving weighted-average material costing and automatic COGS are implemented and awaiting local verification. No current full-suite pass, live costing activation or production readiness is claimed. Update this checkpoint with the actual migration, test and browser results when they are provided.
