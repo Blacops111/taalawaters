@@ -75,6 +75,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/accounting/accounts', [AccountingController::class, 'accounts'])
         ->name('accounting.accounts');
 
+    Route::get('/accounting/profit-loss', [AccountingController::class, 'profitLoss'])
+        ->name('accounting.profit-loss');
+
     Route::get('/accounting/balance-sheet', [AccountingController::class, 'balanceSheet'])
         ->name('accounting.balance-sheet');
 

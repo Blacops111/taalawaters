@@ -6,6 +6,8 @@ use App\Models\AccountingAccount;
 use App\Models\JournalEntry;
 use App\Services\TrialBalanceService;
 use App\Services\BalanceSheetService;
+use App\Services\ProfitLossService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -42,6 +44,18 @@ class AccountingController extends Controller
         return view('accounting.balance-sheet', $service->report(
             $validated['as_of'] ?? now()->toDateString(),
         ));
+    }
+
+    public function profitLoss(Request $request, ProfitLossService $service): View
+    {
+        $validated = $request->validate([
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+        $dateTo = $validated['date_to'] ?? now()->toDateString();
+        $dateFrom = $validated['date_from'] ?? CarbonImmutable::parse($dateTo)->startOfMonth()->toDateString();
+
+        return view('accounting.profit-loss', $service->report($dateFrom, $dateTo));
     }
 
     public function journals(Request $request): View

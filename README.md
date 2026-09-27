@@ -2,9 +2,25 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-> **Current development status (22 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expenses are locally verified: 12 tests / 138 assertions, with Trial Balance and Balance Sheet regressions giving 32 tests / 282 assertions total, followed by browser verification. Expense reversals now await local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
+> **Current development status (25 September 2026):** Development is in Phase 7 (Accounting). Purchasing and delivery workflows are present; goods receipt accounting and supplier payments have been locally verified by the project owner. Customer payments are locally verified: the migration, 38 focused/regression tests (269 assertions), and browser verification passed. Trial Balance is locally verified: 10 tests / 69 assertions and browser verification passed. Balance Sheet is locally verified: its 10 tests / 75 assertions and related Trial Balance / Journal History checks passed (23 tests / 159 assertions total), followed by browser verification. Operating expenses are locally verified: 12 tests / 138 assertions, with Trial Balance and Balance Sheet regressions giving 32 tests / 282 assertions total, followed by browser verification. Expense reversals are locally verified: 10 tests / 100 assertions and browser verification passed. Profit & Loss now awaits local verification. The phase-by-phase descriptions and full-suite result below are the historical 16 September baseline.
 
-## Latest increment — Expense Reversal
+## Latest increment — Profit & Loss
+
+Accounting → Profit & Loss displays posted revenue, expenses (including COGS if posted) and net profit/loss for an inclusive date range, defaulting to month-to-date. It aggregates by account in integer cents, includes inactive accounts and direct parent postings without rollup duplication, preserves negative balances, and applies reversals on their journal dates. Payments, capital and inventory purchases do not become revenue/expenses merely because money changed hands. A link opens posted journals for the same period.
+
+This read-only on-screen report includes all posted revenue/expense movements, including any manual closing entries; no fiscal closing classification exists yet. Profit is provisional while required costs, particularly COGS, are not fully posted. PDF/Excel exports and period-closing workflows are separate increments.
+
+No migration is needed. Run from `water-system/`:
+
+```bash
+php artisan test --filter=ProfitLoss
+php artisan test --filter=OperatingExpenseReversal
+php artisan test --filter=BalanceSheet
+```
+
+Static syntax and diff checks are performed before publishing. PHP is unavailable in the authoring environment; local Laravel tests and browser verification remain pending. In the browser, compare a known sale and expense against period journals, check revenue minus expenses equals net result, and check that changing the range includes/excludes a transaction on its journal date.
+
+## Expense Reversal — verified
 
 Expense History now offers a confirmation page to reverse a mistaken expense with a required reason and reversal date. It posts the exact opposite of the original journal, including its account IDs and amounts, and links both journals. It preserves the immutable expense and adds an immutable `REV-EXP-########` audit record with the user, timestamp and reason. A reversal cannot precede the original expense/journal date. Earlier reports retain the expense; reports from the reversal date include the offset.
 
@@ -20,7 +36,7 @@ php artisan test --filter=TrialBalance
 php artisan test --filter=BalanceSheet
 ```
 
-PHP is unavailable in the authoring environment, so Laravel execution remains pending locally. Static PHP syntax and diff checks are performed before publishing. Browser verification: reverse a test expense with a reason, inspect the opposite journal and unchanged original, confirm its Reversed status, then compare reports before and on the reversal date.
+The project owner confirmed 10 reversal tests / 100 assertions and browser verification after the persisted-snapshot test correction. Browser verification: reverse a test expense with a reason, inspect the opposite journal and unchanged original, confirm its Reversed status, then compare reports before and on the reversal date.
 
 ## Operating Expenses — verified
 

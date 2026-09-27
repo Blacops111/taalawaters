@@ -360,6 +360,12 @@
                             <span>Balance Sheet</span>
                         </a>
                         <a
+                            href="{{ route('accounting.profit-loss') }}"
+                            class="taala-menu-link {{ request()->routeIs('accounting.profit-loss') ? 'active' : '' }}"
+                        >
+                            <span>Profit &amp; Loss</span>
+                        </a>
+                        <a
                             href="{{ route('accounting.supplier-payments') }}"
                             class="taala-menu-link {{ request()->routeIs('accounting.supplier-payments*') ? 'active' : '' }}"
                         >
