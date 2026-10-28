@@ -104,8 +104,10 @@
                         @if($allocationExpenses->isEmpty())
                             <p class="text-muted">No eligible unallocated expenses. Record an eligible expense under <a href="{{ route('accounting.expenses') }}">Accounting → Expenses</a> first.</p>
                         @endif
-                        @php($previousAllocations = old('allocations', [[]]))
-                        @php($allocationRows = is_array($previousAllocations) ? array_slice(array_values($previousAllocations ?: [[]]), 0, 20) : [[]])
+                        @php
+                            $previousAllocations = old('allocations', [[]]);
+                            $allocationRows = is_array($previousAllocations) ? array_slice(array_values($previousAllocations ?: [[]]), 0, 20) : [[]];
+                        @endphp
                         <div id="allocation-rows">
                             @foreach($allocationRows as $index => $row)
                                 @include('production.runs.allocation-row', ['index' => $index, 'row' => $row])
