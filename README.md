@@ -6,7 +6,7 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 
 Follow [the implementation and production launch plan](docs/production-readiness-plan.md) in numbered increments. It covers accounting completion; the agreed Super Admin, Admin, Customer, Stock Manager, Sales Manager, Accountant, Driver and public Guest access; password recovery and one-minute inactivity logout; the V2 dashboard, permission-aware search and settings/themes; new-user tours and Help; responsive public Home/About/Contact/map pages and chatbot-to-agent handoff; a separately restricted payroll payments module for one designated verified account; meter/data cutover; staging/security/performance/recovery checks; and pilot/deployment.
 
-Current increment: **1.1 Historical inventory valuation — implemented, local tests and browser verification pending**. Payroll details, the designated email, customer portal scope, production/purchase approval permissions, device details and contact handoff arrangements will be confirmed before their respective increments. General administrator roles will not automatically grant payroll access.
+Completed increment: **1.1 Historical inventory valuation — owner-verified**. Next: **1.2 Customer and supplier statements**. Payroll details, the designated email, customer portal scope, production/purchase approval permissions, device details and contact handoff arrangements will be confirmed before their respective increments. General administrator roles will not automatically grant payroll access.
 
 ## Current checkpoint — 28 October 2026
 
@@ -26,6 +26,7 @@ Current increment: **1.1 Historical inventory valuation — implemented, local t
 | Profit & Loss | Owner confirmed 10 tests / 65 assertions and browser verification |
 | Inventory material costing and automatic COGS | Owner confirmed 25 tests / 210 assertions, related regressions and browser verification before the new allocation increment |
 | Production labour/electricity/overhead allocation | Owner confirmed 27 tests / 222 assertions, 127 regression tests / 994 assertions and browser verification |
+| Historical inventory valuation | Owner confirmed 14 tests / 117 assertions, 72 regression tests / 576 assertions and browser verification |
 
 These are focused milestone results, not a combined current full-suite result. The 123-test / 615-assertion result documented later is the historical **16 September** baseline.
 
@@ -53,7 +54,7 @@ php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaym
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
 
-## Latest increment — Historical inventory valuation (verification pending)
+## Latest verified increment — Historical inventory valuation
 
 Accounting → Historical Inventory Valuation reconstructs closing quantity and value per item from the approved opening snapshot plus recorded costed movements through the selected UTC calendar day. It compares total value to posted account 1300 Inventory on the same date, showing the signed difference. Today's mutable cost balances are not used to reconstruct earlier dates. Average costs are derived for display only; totals use recorded integer cents.
 
@@ -69,7 +70,7 @@ php artisan test --filter=InventoryValuation
 php artisan test --filter='InventoryCosting|ProductionCostAllocation|TrialBalance|BalanceSheet'
 ```
 
-14 focused tests cover unavailable dates, opening snapshots, same-second activation/movement boundaries, inclusive cutoff, receipts/averages, draft exclusion, inactive items/accounts, escaping, newly added items, immutable history reconstruction, missing snapshots, inconsistent quantities, fractional rounding, production allocations, sales and reversals, read-only behavior and authorization. Static PHP parsing, Blade expression/control-block checks and diff checks were performed; **Laravel tests have not run here because PHP is unavailable**. The first owner run stopped during test discovery because the private journal helper `post()` conflicted with Laravel’s public HTTP test method. The helper is renamed `postInventoryJournal()`; no application posting behavior changed. Both requested test groups must be rerun. Owner runtime and browser verification are pending.
+14 focused tests cover unavailable dates, opening snapshots, same-second activation/movement boundaries, inclusive cutoff, receipts/averages, draft exclusion, inactive items/accounts, escaping, newly added items, immutable history reconstruction, missing snapshots, inconsistent quantities, fractional rounding, production allocations, sales and reversals, read-only behavior and authorization. Static PHP parsing, Blade expression/control-block checks and diff checks were performed; **Laravel tests have not run here because PHP is unavailable**. The first owner run stopped during test discovery because the private journal helper `post()` conflicted with Laravel’s public HTTP test method. The helper is renamed `postInventoryJournal()`; no application posting behavior changed. After correction `9e6be76`, the owner confirmed **14 valuation tests / 117 assertions** and **72 related regression tests / 576 assertions** passing: **86 tests / 693 assertions total**. The owner then confirmed the date-based quantities/values, account 1300 reconciliation, transaction-date effects and pre-activation unavailable state with `historical inventory valuation ok`. Plan increment 1.1 is complete.
 
 Browser check on the test database: choose an activation-or-later day with known activity and compare quantities/value with the recorded transactions and Trial Balance account 1300. Choose a day before and after a known receipt, sale or reversal and verify only the appropriate activity is included. A date before activation must show unavailable. This check requires no new live transactions or changes to opening values.
 
@@ -777,7 +778,7 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 
 ## Current checkpoint — Production expense allocation verified
 
-Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The allocation workflow is now also owner-verified: 154 tests / 1,216 assertions across its requested groups, followed by browser confirmation. Historical inventory valuation is now implemented as plan increment 1.1 and awaits its focused tests, affected regressions and browser verification.
+Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The allocation workflow is now also owner-verified: 154 tests / 1,216 assertions across its requested groups, followed by browser confirmation. Historical inventory valuation (plan increment 1.1) is now owner-verified: 86 tests / 693 assertions across its requested groups plus browser confirmation. Next is increment 1.2: customer and supplier statements.
 
 The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water retains its explicitly approved zero acquisition cost. Eligible recorded labour, power and overhead can now be allocated when completing new batches; unallocated costs remain expenses. Automatic overhead rates, payroll/accrual integration and repricing existing batches remain outside this increment.
 
@@ -785,7 +786,7 @@ The implementation uses moving weighted average. Existing history is preserved; 
 
 The authoritative sequence and completion checks are in [the production launch plan](docs/production-readiness-plan.md):
 
-1. Complete accounting reports, statements, correction controls and period locking; verify historical inventory valuation first.
+1. Complete accounting reports, statements, correction controls and period locking; continue with customer and supplier statements after verified historical inventory valuation.
 2. Roll out agreed roles, customer isolation, password recovery and one-minute inactivity logout.
 3. Build the V2 dashboard, permission-aware search and personal/company settings.
 4. Add role-aware onboarding, Help documentation and cross-system responsive/accessibility review.
@@ -797,4 +798,4 @@ The authoritative sequence and completion checks are in [the production launch p
 
 ## Project status note
 
-This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS were verified with 154 tests / 1,009 assertions and browser confirmation. Production conversion-cost allocation is the latest owner-verified milestone: 154 tests / 1,216 assertions across its requested test groups and browser confirmation. These overlapping checkpoint totals must not be added together as a unique-test count. Historical inventory valuation is implemented but not yet owner-verified. No current full-suite pass or production readiness is claimed.
+This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS were verified with 154 tests / 1,009 assertions and browser confirmation. Production conversion-cost allocation was owner-verified with: 154 tests / 1,216 assertions across its requested test groups and browser confirmation. These overlapping checkpoint totals must not be added together as a unique-test count. Historical inventory valuation is the latest owner-verified milestone: 86 tests / 693 assertions across its focused and regression groups plus browser confirmation. No current full-suite pass or production readiness is claimed.

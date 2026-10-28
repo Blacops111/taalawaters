@@ -6,15 +6,15 @@ Updated: 28 October 2026. Branch: `taala-v2-development`.
 
 Implement the numbered increments in order, preserving existing data and audit history. For each increment: inspect existing behavior → implement → add focused tests for consequential behavior → run focused and affected regression tests → owner browser verification → update README and this plan. Fix failures before moving on. Do not claim local tests were run when only static checks were possible. Deployment is a separate final gate.
 
-Completed baseline: V2 inventory, production, sales, purchasing, delivery workflows and accounting are implemented. Production expense allocation is the latest owner-verified milestone: 154 tests / 1,216 assertions across its requested test groups plus `production cost allocation ok`. A current full-suite and staging run remain outstanding.
+Completed baseline: V2 inventory, production, sales, purchasing, delivery workflows and accounting are implemented. Production expense allocation was owner-verified with 154 tests / 1,216 assertions across its requested test groups plus `production cost allocation ok`. Historical inventory valuation is now the latest owner-verified milestone: 14 focused tests / 117 assertions and 72 regression tests / 576 assertions (86 / 693 total), followed by `historical inventory valuation ok`. These overlapping milestone groups are not cumulative unique-test totals. A current full-suite and staging run remain outstanding.
 
-Status legend: **In progress** means implementation underway; **Pending verification** means delivered but not yet owner-verified; **Planned** means not yet delivered. Existing functionality will be reviewed and reused rather than rebuilt unnecessarily.
+Status legend: **Owner-verified** means focused tests, affected regressions and owner browser checks passed; **In progress** means implementation underway; **Pending verification** means delivered but not yet owner-verified; **Planned** means not yet delivered. Existing functionality will be reviewed and reused rather than rebuilt unnecessarily.
 
 ## 1. Accounting completion
 
 | Increment | Work | Completion check | Status |
 | --- | --- | --- | --- |
-| 1.1 | Historical inventory valuation by date; opening values plus recorded quantity/value movements; reconciliation to posted account 1300 | Inclusive cutoff, reversals on their own dates, inactive items, no invented pre-activation values; report totals reconcile and differences remain visible | Pending verification |
+| 1.1 | Historical inventory valuation by date; opening values plus recorded quantity/value movements; reconciliation to posted account 1300 | Inclusive cutoff, reversals on their own dates, inactive items, no invented pre-activation values; report totals reconcile and differences remain visible | Owner-verified — 86 tests / 693 assertions and browser confirmation |
 | 1.2 | Customer and supplier statements | Opening balance + dated activity = closing balance; only authorized records visible | Planned |
 | 1.3 | Outstanding balances and ageing | Confirm payment terms/due dates first; ageing agrees with receivables/payables and does not invent overdue dates | Planned |
 | 1.4 | Financial report PDF/Excel exports | Export totals/date ranges match screen; authorized access and safe user text | Planned |
@@ -124,4 +124,4 @@ Gather hardware and migration information early while software increments procee
 
 ## Immediate next action
 
-**1.1 Historical inventory valuation** is implemented; run its focused tests and affected regressions, then verify in the browser. No other new module starts until its focused tests, affected regressions and owner browser verification pass. Keep this document and README synchronized as each milestone completes. No delivery dates are promised before hardware, payroll, external-service and business-policy dependencies are known.
+**1.1 Historical inventory valuation** is complete. Next is **1.2 Customer and supplier statements**: opening balance, dated transactions/payments and closing balance, with authorized access. Its implementation, focused tests, affected regressions and owner browser verification must pass before advancing to 1.3. Keep this document and README synchronized as each milestone completes. No delivery dates are promised before hardware, payroll, external-service and business-policy dependencies are known.
