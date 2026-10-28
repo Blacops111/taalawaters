@@ -21,6 +21,7 @@ class OperatingExpenseController extends Controller
             ->where('type', AccountingAccount::TYPE_ASSET)->where('is_active', true)
             ->orderBy('code')->get(['id', 'code', 'name']);
         $expenses = OperatingExpense::query()
+            ->withSum(['productionAllocations as allocated_cents' => fn ($q) => $q->whereDoesntHave('productionRun.reversal')], 'amount_cents')
             ->with(['expenseAccount:id,code,name', 'paymentAccount:id,code,name', 'creator:id,name', 'reversal.reversedBy:id,name'])
             ->latest('expense_date')->latest('id')->paginate(25);
 
@@ -34,7 +35,8 @@ class OperatingExpenseController extends Controller
             return redirect()->route('accounting.expenses')->withErrors(['expense' => 'This expense has already been reversed.']);
         }
 
-        return view('accounting.expense-reversal', ['expense' => $operatingExpense]);
+        $allocatedCents = app(\App\Services\ProductionCostAllocationService::class)->activeCents($operatingExpense);
+        return view('accounting.expense-reversal', ['expense' => $operatingExpense, 'allocatedCents' => $allocatedCents]);
     }
 
     public function reverse(Request $request, OperatingExpense $operatingExpense, OperatingExpenseReversalService $service): RedirectResponse

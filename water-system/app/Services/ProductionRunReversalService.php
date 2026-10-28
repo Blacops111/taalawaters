@@ -176,6 +176,8 @@ class ProductionRunReversalService
                 ]);
             }
 
+            app(ProductionCostAllocationService::class)->reverse($lockedRun, $reversal, $user);
+
             $lockedRun->status = 'reversed';
             $lockedRun->save();
 

@@ -96,6 +96,13 @@
         </div>
     </div>
 
+    @if($productionRun->costAllocations->isNotEmpty())
+        <div class="alert alert-info">
+            This batch includes KES {{ number_format($productionRun->costAllocations->sum('amount_cents') / 100, 2) }} of allocated production expenses. Reversal also restores those amounts to the original expense accounts and makes them available for a corrected batch. The original cash/bank payment stays unchanged.
+            <a href="{{ route('accounting.production-costs', ['search' => $productionRun->reference]) }}">Review allocations</a>
+        </div>
+    @endif
+
     @if($productionRun->status === 'completed' && !$productionRun->reversal)
         <div class="alert alert-warning">
             Reversing this run will restore the materials consumed by production and remove the finished stock created by this run. The original record will remain in the audit history.

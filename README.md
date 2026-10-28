@@ -4,7 +4,7 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 
 ## Current checkpoint — 28 October 2026
 
-**Phase 7 (Accounting) is in progress.** Moving weighted-average material costing and automatic sales COGS are now **owner-verified**. Implementation commit `e41beff` and access-test correction `56a552f` passed 25 costing tests / 210 assertions plus 129 related regression tests / 799 assertions: **154 tests / 1,009 assertions total**. The owner confirmed the requested browser workflow with `inventory costing ok`. This confirms the local milestone; production deployment and a current full-suite run are separate checks. On another database, costing remains inactive until opening values are explicitly approved.
+**Phase 7 (Accounting) is in progress.** Moving weighted-average material costing and automatic sales COGS are now **owner-verified**. Implementation commit `e41beff` and access-test correction `56a552f` passed 25 costing tests / 210 assertions plus 129 related regression tests / 799 assertions: **154 tests / 1,009 assertions total**. The owner confirmed the requested browser workflow with `inventory costing ok`. This confirms the local milestone; production deployment and a current full-suite run are separate checks. On another database, costing remains inactive until opening values are explicitly approved. The new production expense allocation increment is implemented and awaits its own local migration, test and browser verification.
 
 | Area | Latest confirmed status |
 | --- | --- |
@@ -18,13 +18,14 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 | Operating expenses | Owner confirmed 12 tests / 138 assertions and browser verification |
 | Expense reversals | Owner confirmed 10 tests / 100 assertions and browser verification |
 | Profit & Loss | Owner confirmed 10 tests / 65 assertions and browser verification |
-| Inventory material costing and automatic COGS | Owner confirmed 25 tests / 210 assertions, related regressions and browser verification |
+| Inventory material costing and automatic COGS | Owner confirmed 25 tests / 210 assertions, related regressions and browser verification before the new allocation increment |
+| Production labour/electricity/overhead allocation | Implemented; 27 focused tests added; local migration, tests and browser verification pending |
 
 These are focused milestone results, not a combined current full-suite result. The 123-test / 615-assertion result documented later is the historical **16 September** baseline.
 
 ### Resume here
 
-The inventory costing milestone is complete. Local verification reported:
+The previous inventory costing milestone is complete. Its local verification reported:
 
 | Test group | Tests passed | Assertions |
 | --- | ---: | ---: |
@@ -33,7 +34,7 @@ The inventory costing milestone is complete. Local verification reported:
 | Inventory adjustments/receipts, water meter and financial report regressions | 40 | 261 |
 | **Total across these runs** | **154** | **1,009** |
 
-Browser verification was confirmed after the requested opening setup → partial receipt → production → sale checks, including the COGS journal, inventory reconciliation and Profit & Loss. The next proposed increment is production labour/electricity/overhead allocation, preserving the existing expense history and preventing double counting. Allocation rules and implementation remain future work.
+Browser verification was confirmed after the requested opening setup → partial receipt → production → sale checks, including the COGS journal, inventory reconciliation and Profit & Loss. Production labour/electricity/overhead allocation is now implemented, preserving expense/payment history and limiting allocation to the source expense balance. Its runtime verification is the current task; follow the latest-increment commands below first.
 
 The commands below reproduce the verified test groups from `water-system/`; they are not outstanding tasks for this milestone:
 
@@ -45,6 +46,42 @@ php artisan test --filter=InventoryCosting
 php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaymentAccounting|SupplierPaymentAccounting'
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
+
+## Latest increment — Production expense allocation (verification pending)
+
+When completing a **new** production run, an admin can optionally select up to 20 existing operating expenses, enter the amount attributable to that batch and record its allocation basis. Record production labour under 5500 General Operating Expense, electricity under 5300 Utilities, and eligible production overhead under 5400 Repairs or 5500 General Operating Expense. The form lists unallocated balances; Accounting → Production Costs provides searchable, paginated allocation history linked to batch journals. Expense history shows amounts currently allocated to production.
+
+Each allocation posts **Dr 1300 Inventory / Cr the original expense account** and adds that value to the batch output before updating the moving average. The original expense, original journal and Cash/Bank payment remain unchanged. Later sales include the allocated cost in COGS. Unallocated portions remain expenses. Material-only production continues to work when the optional allocation rows are blank.
+
+Controls and scope:
+
+- Inventory Costing must be active. Only expenses recorded after activation, dated on or after activation and no later than the batch date, are eligible. This prevents reusing old costs that may already be in opening stock. Future-dated allocated production is rejected.
+- Only eligible production-related portions of accounts 5300/5400/5500 can be selected; 5200 delivery/fuel costs are excluded. The admin supplies a supported allocation basis, such as measured production hours or electricity usage. Exclude office administration, delivery, abnormal waste and idle-capacity costs. This is manual allocation of recorded paid expenses, not payroll, accrued bills or an automatic normal-capacity overhead calculation.
+- Each expense needs exactly one unreversed posted journal matching its recorded amount/accounts/date. Missing, duplicate, mismatched or reversed source journals and inactive/wrong-type accounts are rejected.
+- Amounts are validated as positive exact cents. An expense can be split across batches, but active allocations cannot exceed its original amount. Duplicate expense rows in one batch are rejected.
+- A production form submission key prevents repeated submissions creating a second batch/journal; changed payloads and replay of reversed batches are rejected. Stock, allocation audit rows, and journals commit or roll back together under the existing costing lock.
+- Allocations are immutable and are entered only during completion. Existing batches are not retroactively repriced.
+- Reversing a batch reverses its exact original allocation journal and stock costs, restores the expense balance and releases allocation capacity. The existing rule blocking production reversals after subsequent input/output stock movements remains. An expense with active allocations cannot be reversed independently. Reallocation and expense reversal cannot be backdated before the batch reversal that released the amount.
+- Reversal requires matching audit, original journal and stock-value history. Failed journal posting or stock validation rolls back the whole operation. Original accounts may be reversed after deactivation.
+
+Accounting context: inventory costs can include direct labour and production overhead; see the [IFRS Foundation IAS 2 overview](https://www.ifrs.org/issued-standards/list-of-standards/ias-2-inventories/). This increment supplies an auditable manual allocation workflow; it does not determine which business costs qualify or claim full standards compliance.
+
+New migration: `water-system/database/migrations/2026_10_28_000100_create_production_cost_allocations.php`. It adds immutable allocation records and nullable production submission keys without rewriting existing batches.
+
+From `water-system/`:
+
+```bash
+git fetch origin taala-v2-development
+git merge --ff-only FETCH_HEAD
+php artisan migrate
+php artisan test --filter=ProductionCostAllocation
+php artisan test --filter='InventoryCosting|ProductionRun|OperatingExpense'
+php artisan test --filter='SalesOrderAccounting|SalesOrderReversal|CustomerPaymentAccounting|ProfitLoss|TrialBalance|BalanceSheet'
+```
+
+27 focused tests cover allocation journals, exact cents, shared expense limits, submission replay, sales COGS, reports, reversal release/date ordering, original-record preservation, permissions, audit immutability, pagination and rollback. Static PHP parsing and diff checks were performed; **PHP is unavailable in the authoring environment, so Laravel tests and the migration have not been executed here**. Local results and browser verification remain pending.
+
+After tests pass, use a test database with costing active. Record a KES 100 production electricity expense after activation, then allocate KES 50 when producing a batch whose material cost is KES 20. With 10 units and no existing finished stock, output value should be KES 70 and average cost KES 7. Check Dr Inventory / Cr Utilities KES 50, the original Cash/Bank payment still KES 100, and KES 50 unallocated expense remaining. Selling 2 units should post KES 14 COGS. Test batch reversal on a separate unsold batch with no later input/output movements; it should restore expense value and release the allocation while preserving original history. Confirm account 1300 still reconciles with inventory valuation.
 
 ## Latest verified increment — Moving weighted-average inventory material costing
 
@@ -62,7 +99,7 @@ After activation:
 - Costs use Brick Math decimal arithmetic (already installed through the locked Laravel dependencies), integer thousandths for quantities and integer cents for money. The final issue takes residual cents. Costed movements are immutable. A consistent transaction lock serializes stock writes and setup; backdating before an item's latest costed movement is rejected.
 - The page shows current recorded quantity, average cost, valuation, costed movement history and the reconciliation to account 1300. It is a current ledger view, not a historical as-of valuation report.
 
-**Scope and cutover:** This is material costing, not full absorption costing. Setup explicitly approves zero acquisition cost for meter-managed borehole water. Labour, pumping electricity and production overhead remain separately expensed; allocation into inventory is a later increment and must avoid double counting. Resolve corrections to old sales/production before activation: pre-costing movements have no cost snapshot and cannot be automatically reversed after cutover. Approved zero opening values are accepted deliberately; missing values are rejected. A new item with no prior stock starts at zero and acquires value through approved receipts/production. Legacy data is never erased.
+**Scope and cutover:** This is material costing, not full absorption costing. Setup explicitly approves zero acquisition cost for meter-managed borehole water. That verified material-only increment left labour, pumping electricity and overhead separately expensed. The newer allocation increment above adds explicit conversion costs to new batches and still needs local verification. Resolve corrections to old sales/production before activation: pre-costing movements have no cost snapshot and cannot be automatically reversed after cutover. Approved zero opening values are accepted deliberately; missing values are rejected. A new item with no prior stock starts at zero and acquires value through approved receipts/production. Legacy data is never erased.
 
 New migration: `water-system/database/migrations/2026_09_27_000100_create_inventory_costing.php`.
 
@@ -565,6 +602,7 @@ production_recipes
 production_recipe_components
 production_runs
 production_run_reversals
+production_cost_allocations
 customers
 sales_orders
 sales_order_items
@@ -711,15 +749,15 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 - Add focused tests for stock, financial and authorization behavior.
 - Fix errors before moving to the next module.
 
-## Next proposed work — Production conversion costs
+## Next work — Verify production expense allocation
 
-Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The next proposed accounting increment is allocating eligible production labour, electricity and overhead to finished inventory. It must preserve expense/payment history, prevent duplicate allocation and retain auditable reversals. No conversion-cost allocation has been implemented yet.
+Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The new allocation workflow is implemented. Run its migration, focused tests and listed regressions, then verify the expense → production → sale flow and batch reversal in the browser before marking it complete.
 
-The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water uses an explicitly approved zero acquisition cost, while labour, pumping electricity and other overhead remain separately expensed. Allocating those costs into inventory is not implemented yet.
+The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water retains its explicitly approved zero acquisition cost. Eligible recorded labour, power and overhead can now be allocated when completing new batches; unallocated costs remain expenses. Automatic overhead rates, payroll/accrual integration and repricing existing batches remain outside this increment.
 
 ## Remaining roadmap
 
-- Production labour/electricity/overhead allocation with no double counting of existing expenses.
+- Local verification of production expense allocation, then any separately agreed automatic overhead-rate or payroll/accrual integration.
 - Historical inventory valuation and additional accounting exports/period-closing workflows, as agreed.
 - Phase 8: V2 dashboard and broader management reporting; existing accounting reports are already implemented.
 - Phase 9: expanded role permissions and security hardening.
@@ -729,4 +767,4 @@ The implementation uses moving weighted average. Existing history is preserved; 
 
 ## Project status note
 
-This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS are the latest owner-verified accounting milestone: 154 tests / 1,009 assertions across the recorded test groups and browser confirmation. Production conversion-cost allocation is proposed next. No current full-suite pass or production readiness is claimed.
+This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS are the latest owner-verified accounting milestone: 154 tests / 1,009 assertions across the recorded test groups and browser confirmation. Production conversion-cost allocation is implemented and awaiting local migration, test and browser verification. No current full-suite pass or production readiness is claimed.

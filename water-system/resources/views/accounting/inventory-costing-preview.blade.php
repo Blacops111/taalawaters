@@ -10,7 +10,7 @@
         @foreach($items as $item)<tr><td>{{ $item->sku }} — {{ $item->name }}</td><td>{{ $data['quantities'][$item->id] ?? 'Missing' }}</td><td>{{ $data['values'][$item->id] ?? 'Missing' }}</td></tr>@endforeach
     </tbody></table>
     <p>Reason: {{ $data['notes'] }}</p>
-    <p>Costing starts now. Existing journals remain unchanged. Opening values cannot be edited afterwards. Borehole acquisition cost is zero; electricity and labour remain separately expensed.</p>
+    <p>Costing starts now. Existing journals remain unchanged. Opening values cannot be edited afterwards. Borehole acquisition cost is zero; electricity and labour remain expensed until explicitly allocated to production.</p>
     <form method="POST" action="{{ route('accounting.inventory-costing.activate') }}">
         @csrf
         @foreach($data as $key => $value)

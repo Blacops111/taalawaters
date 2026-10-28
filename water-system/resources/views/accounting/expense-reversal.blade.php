@@ -9,6 +9,9 @@
             <p><strong>{{ $expense->description }}</strong><br>Expense date: {{ $expense->expense_date->format('Y-m-d') }}<br>Amount: KES {{ number_format((float) $expense->amount, 2) }}</p>
             <p>This correction will debit {{ $expense->paymentAccount?->code }} — {{ $expense->paymentAccount?->name }} and credit {{ $expense->expenseAccount?->code }} — {{ $expense->expenseAccount?->name }} for the original amount.</p>
             <p class="text-muted">The original expense stays in history. This records an accounting correction; it does not move money or issue a refund.</p>
+            @if($allocatedCents > 0)
+                <div class="alert alert-warning">KES {{ number_format($allocatedCents / 100, 2) }} is allocated to production. Reverse the affected production runs before reversing this expense. <a href="{{ route('accounting.production-costs', ['search' => $expense->reference]) }}">Review allocations</a></div>
+            @endif
             <form method="POST" action="{{ route('accounting.expenses.reverse', $expense) }}">
                 @csrf
                 <div class="mb-3">
@@ -21,7 +24,7 @@
                     <textarea id="reason" name="reason" rows="3" maxlength="300" class="form-control @error('reason') is-invalid @enderror" required>{{ old('reason') }}</textarea>
                     @error('reason')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
-                <button type="submit" class="btn btn-danger">Confirm Reversal</button>
+                <button type="submit" class="btn btn-danger" @disabled($allocatedCents > 0)>Confirm Reversal</button>
                 <a href="{{ route('accounting.expenses') }}" class="btn btn-outline-secondary">Cancel</a>
             </form>
         </div>

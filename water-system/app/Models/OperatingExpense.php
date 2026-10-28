@@ -32,6 +32,11 @@ class OperatingExpense extends Model
         });
     }
 
+    public function productionAllocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductionCostAllocation::class);
+    }
+
     public function expenseAccount(): BelongsTo
     {
         return $this->belongsTo(AccountingAccount::class, 'expense_account_id');

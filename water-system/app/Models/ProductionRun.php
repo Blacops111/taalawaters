@@ -19,6 +19,8 @@ class ProductionRun extends Model
         'created_by',
         'reference',
         'notes',
+        'completion_key',
+        'completion_fingerprint',
     ];
 
     protected function casts(): array
@@ -28,6 +30,16 @@ class ProductionRun extends Model
             'recipe_output_quantity' => 'decimal:3',
             'occurred_at' => 'datetime',
         ];
+    }
+
+    public function costAllocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductionCostAllocation::class);
+    }
+
+    public function journalEntries(): MorphMany
+    {
+        return $this->morphMany(JournalEntry::class, 'source');
     }
 
     public function recipe(): BelongsTo

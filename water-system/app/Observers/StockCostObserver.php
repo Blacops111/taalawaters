@@ -79,9 +79,10 @@ class StockCostObserver
             if ($quantity <= 0 || $inputs->isEmpty() || $inputs->contains(fn ($row) => $row->value_delta_cents === null)) {
                 $cost->fail('Production requires recorded costs for every consumed material.');
             }
-            $delta = -(int) $inputs->sum('value_delta_cents');
+            $conversionCents = (int) \App\Models\ProductionCostAllocation::where('production_run_id', $movement->source_id)->sum('amount_cents');
+            $delta = -(int) $inputs->sum('value_delta_cents') + $conversionCents;
         } elseif ($type === 'borehole_extraction' && $item->category === 'raw_water' && $quantity > 0) {
-            // Explicitly approved on setup. Power/labour remain separately expensed in this stage.
+            // Explicit zero acquisition cost; eligible recorded conversion expenses can be allocated at production.
             $delta = 0;
         } elseif ($type === 'stock_correction_increase' && $quantity > 0 && $available > 0) {
             $delta = \Brick\Math\BigDecimal::of($value)->multipliedBy($quantity)->dividedBy($available, 0, \Brick\Math\RoundingMode::HALF_UP)->toInt();

@@ -25,11 +25,13 @@ class OperatingExpenseReversalService
         }
 
         return DB::transaction(function () use ($expense, $user, $data, $reason) {
+            InventoryCostingService::lock();
             // Serialize reversals for this expense; uniqueness also protects the audit record.
             $lockedExpense = OperatingExpense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
             if ($lockedExpense->reversal()->exists()) {
                 throw ValidationException::withMessages(['expense' => 'This expense has already been reversed.']);
             }
+            app(ProductionCostAllocationService::class)->guardExpenseReversal($lockedExpense, $data['reversal_date']);
             $journals = $lockedExpense->journalEntries()->where('status', JournalEntry::STATUS_POSTED)
                 ->with('lines')->lockForUpdate()->get();
             if ($journals->count() !== 1) {

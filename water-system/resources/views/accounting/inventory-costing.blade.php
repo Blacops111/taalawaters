@@ -2,10 +2,10 @@
 @section('content')
 <div class="container">
     <h2>Inventory Costing</h2>
-    <p class="text-muted">Moving weighted-average material costs, in KES.</p>
+    <p class="text-muted">Moving weighted-average inventory costs, in KES.</p>
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
-    <div class="alert alert-info">Material costing includes approved purchases and material costs transferred through production. Borehole water has zero acquisition cost. Electricity, labour and other operating costs remain in Expenses; they are not allocated to finished stock in this release.</div>
+    <div class="alert alert-info">Inventory costs include approved purchases, materials used in production and any recorded production expenses allocated when the batch is completed. Borehole water has zero acquisition cost. Unallocated electricity, labour and overhead remain in Expenses.</div>
     @if(!$setup->is_active)
         <div class="card card-body mb-4">
             <h4>Review opening inventory</h4>
@@ -35,7 +35,7 @@
                 </select>
                 <label for="notes" class="form-label">Valuation basis and reconciliation reason</label>
                 <textarea id="notes" name="notes" class="form-control mb-3" required maxlength="1000">{{ old('notes') }}</textarea>
-                <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="acknowledgement" value="1" id="acknowledgement" required><label class="form-check-label" for="acknowledgement">I reviewed all opening values and approve zero acquisition cost for meter-managed borehole water. Labour and power remain separately expensed.</label></div>
+                <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="acknowledgement" value="1" id="acknowledgement" required><label class="form-check-label" for="acknowledgement">I reviewed all opening values and approve zero acquisition cost for meter-managed borehole water. Labour and power remain expensed until explicitly allocated to a production batch.</label></div>
                 <button class="btn btn-primary" @disabled($items->isEmpty())>Preview opening reconciliation</button>
             </form>
         </div>

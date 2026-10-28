@@ -23,6 +23,11 @@ class ProductionRunReversal extends Model
         ];
     }
 
+    public function journalEntries(): MorphMany
+    {
+        return $this->morphMany(JournalEntry::class, 'source');
+    }
+
     public function productionRun(): BelongsTo
     {
         return $this->belongsTo(ProductionRun::class);

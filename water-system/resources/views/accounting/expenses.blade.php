@@ -91,7 +91,11 @@
                             <td>{{ $expense->paymentAccount?->code }} — {{ $expense->paymentAccount?->name }}</td>
                             <td>{{ $expense->payee ?: '—' }}<div class="small text-muted">{{ $expense->external_reference ?: '—' }}</div></td>
                             <td>{{ $expense->creator?->name }}</td>
-                            <td class="text-end">{{ number_format((float) $expense->amount, 2) }}</td>
+                            <td class="text-end">{{ number_format((float) $expense->amount, 2) }}
+                                @if((int) $expense->allocated_cents > 0)
+                                    <div class="small"><a href="{{ route('accounting.production-costs', ['search' => $expense->reference]) }}">Allocated to production: {{ number_format($expense->allocated_cents / 100, 2) }}</a></div>
+                                @endif
+                            </td>
                             <td>
                                 @if($expense->reversal)
                                     <span class="badge bg-secondary">Reversed</span>

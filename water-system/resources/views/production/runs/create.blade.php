@@ -33,6 +33,7 @@
         <div class="card-body">
             <form method="POST" action="{{ route('production.runs.store') }}">
                 @csrf
+                <input type="hidden" name="completion_key" value="{{ old('completion_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -95,6 +96,29 @@
                     </div>
                 </div>
 
+                @if($costingActive)
+                    <div class="border rounded p-3 mt-4">
+                        <h5>Production labour, electricity and overhead <span class="text-muted">(optional)</span></h5>
+                        <p>Allocate only the part of a recorded expense used by this batch. This increases finished-stock cost and reduces the original expense balance without another payment. Leave blank for material-only costing.</p>
+                        <p class="small text-muted">Record labour under General Operating Expense, power under Utilities, and eligible production overhead under Repairs or General Operating Expense. Only expenses recorded after costing activation are available. Give the calculation basis; exclude delivery, office administration, abnormal waste and idle-capacity costs. Costs already included in opening stock must not be allocated again.</p>
+                        @if($allocationExpenses->isEmpty())
+                            <p class="text-muted">No eligible unallocated expenses. Record an eligible expense under <a href="{{ route('accounting.expenses') }}">Accounting → Expenses</a> first.</p>
+                        @endif
+                        @php($previousAllocations = old('allocations', [[]]))
+                        @php($allocationRows = is_array($previousAllocations) ? array_slice(array_values($previousAllocations ?: [[]]), 0, 20) : [[]])
+                        <div id="allocation-rows">
+                            @foreach($allocationRows as $index => $row)
+                                @include('production.runs.allocation-row', ['index' => $index, 'row' => $row])
+                            @endforeach
+                        </div>
+                        <button type="button" id="add-allocation" class="btn btn-sm btn-outline-primary">Add expense allocation</button>
+                        <a class="btn btn-sm btn-link" href="{{ route('accounting.production-costs') }}">View allocation history</a>
+                    </div>
+                    <template id="allocation-template">@include('production.runs.allocation-row', ['index' => '__INDEX__', 'row' => []])</template>
+                @else
+                    <p class="text-muted mt-4">Activate <a href="{{ route('accounting.inventory-costing') }}">Inventory Costing</a> before allocating production expenses.</p>
+                @endif
+
                 <div class="alert alert-info mt-4 mb-3">
                     The system will check every recipe component first. If any material is insufficient, no inventory quantities will be changed.
                 </div>
@@ -133,7 +157,11 @@
                                     : number_format($quantity, 3);
                             @endphp
                             <tr>
-                                <td><strong>{{ $run->reference }}</strong></td>
+                                <td><strong>{{ $run->reference }}</strong>
+                                    @if($run->costAllocations->isNotEmpty())
+                                        <div class="small"><a href="{{ route('accounting.production-costs', ['search' => $run->reference]) }}">Conversion costs: KES {{ number_format($run->costAllocations->sum('amount_cents') / 100, 2) }}</a></div>
+                                    @endif
+                                </td>
                                 <td>{{ $run->occurred_at?->format('Y-m-d H:i') }}</td>
                                 <td>{{ $run->finishedProduct?->name }}</td>
                                 <td class="text-end">
@@ -173,4 +201,25 @@
         </div>
     </div>
 </div>
+@if($costingActive)
+<script>
+(() => {
+    const rows = document.getElementById('allocation-rows');
+    const add = document.getElementById('add-allocation');
+    const template = document.getElementById('allocation-template');
+    let next = rows.children.length;
+    add.addEventListener('click', () => {
+        if (rows.children.length >= 20) return;
+        rows.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__INDEX__', String(next++)));
+        add.disabled = rows.children.length >= 20;
+    });
+    rows.addEventListener('click', event => {
+        const button = event.target.closest('.remove-allocation');
+        if (!button) return;
+        button.closest('.allocation-row').remove();
+        add.disabled = false;
+    });
+})();
+</script>
+@endif
 @endsection

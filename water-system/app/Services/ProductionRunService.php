@@ -20,7 +20,9 @@ class ProductionRunService
         float $quantityProduced,
         ?User $user = null,
         ?CarbonInterface $occurredAt = null,
-        ?string $notes = null
+        ?string $notes = null,
+        array $expenseAllocations = [],
+        ?string $idempotencyKey = null,
     ): ProductionRun {
         if ($quantityProduced <= 0) {
             throw new InvalidArgumentException('Production quantity must be greater than zero.');
@@ -36,14 +38,40 @@ class ProductionRunService
             ? CarbonImmutable::instance($occurredAt)->utc()
             : now()->utc();
 
+        $allocations = app(ProductionCostAllocationService::class)->normalize($expenseAllocations);
+        \Illuminate\Support\Facades\Validator::make(['completion_key' => $idempotencyKey], [
+            'completion_key' => [$allocations !== [] ? 'required' : 'nullable', 'uuid'],
+        ])->validate();
+        $idempotencyKey = $idempotencyKey ? strtolower($idempotencyKey) : null;
+        if ($allocations !== [] || $idempotencyKey !== null) {
+            abort_unless($user && $user->role === 'admin', 403);
+        }
+        $fingerprint = hash('sha256', json_encode([
+            'recipe' => $recipe->id, 'quantity' => (string) round($quantityProduced),
+            'occurred_at' => $occurredAtUtc->format('Y-m-d H:i:s'), 'notes' => $notes,
+            'allocations' => $allocations, 'user' => $user?->id,
+        ], JSON_THROW_ON_ERROR));
+
         return DB::transaction(function () use (
             $recipe,
             $quantityProduced,
             $user,
             $occurredAtUtc,
-            $notes
+            $notes,
+            $allocations,
+            $idempotencyKey,
+            $fingerprint,
         ) {
             InventoryCostingService::lock();
+            if ($idempotencyKey !== null) {
+                $existing = ProductionRun::where('completion_key', $idempotencyKey)->lockForUpdate()->first();
+                if ($existing) {
+                    if ($existing->completion_fingerprint !== $fingerprint || $existing->status !== 'completed' || $existing->reversal()->exists()) {
+                        throw ValidationException::withMessages(['completion_key' => 'This submission already recorded a different or reversed production run. Reload the form.']);
+                    }
+                    return $existing->load(['recipe', 'finishedProduct', 'creator', 'stockMovements', 'costAllocations']);
+                }
+            }
             $lockedRecipe = ProductionRecipe::query()
                 ->whereKey($recipe->id)
                 ->lockForUpdate()
@@ -150,10 +178,16 @@ class ProductionRunService
                 'occurred_at' => $occurredAtUtc,
                 'created_by' => $user?->id,
                 'notes' => $notes,
+                'completion_key' => $idempotencyKey,
+                'completion_fingerprint' => $idempotencyKey !== null ? $fingerprint : null,
             ]);
 
             $run->reference = 'PROD-'.str_pad((string) $run->id, 8, '0', STR_PAD_LEFT);
             $run->save();
+
+            if ($allocations !== []) {
+                app(ProductionCostAllocationService::class)->allocate($run, $user, $allocations);
+            }
 
             foreach ($requirements as $requirement) {
                 StockMovement::create([

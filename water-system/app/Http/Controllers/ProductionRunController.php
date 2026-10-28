@@ -25,13 +25,16 @@ class ProductionRunController extends Controller
             ->values();
 
         $recentRuns = ProductionRun::query()
-            ->with(['finishedProduct', 'creator', 'reversal'])
+            ->with(['finishedProduct', 'creator', 'reversal', 'costAllocations.expense', 'journalEntries'])
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
             ->limit(20)
             ->get();
 
-        return view('production.runs.create', compact('recipes', 'recentRuns'));
+        $costingActive = \App\Models\InventoryCostingSetup::findOrFail(1)->is_active;
+        $allocationExpenses = app(\App\Services\ProductionCostAllocationService::class)->availableExpenses()->get();
+
+        return view('production.runs.create', compact('recipes', 'recentRuns', 'costingActive', 'allocationExpenses'));
     }
 
     public function store(Request $request, ProductionRunService $productionRunService)
@@ -41,6 +44,8 @@ class ProductionRunController extends Controller
             'quantity_produced' => ['required', 'integer', 'min:1', 'max:999999999999'],
             'occurred_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'completion_key' => ['nullable', 'uuid'],
+            'allocations' => ['nullable', 'array', 'max:20'],
         ]);
 
         $recipe = ProductionRecipe::query()->findOrFail($validated['production_recipe_id']);
@@ -55,7 +60,9 @@ class ProductionRunController extends Controller
             (float) $validated['quantity_produced'],
             $request->user(),
             $occurredAt,
-            $validated['notes'] ?? null
+            $validated['notes'] ?? null,
+            $validated['allocations'] ?? [],
+            $validated['completion_key'] ?? null,
         );
 
         return redirect()
@@ -73,6 +80,8 @@ class ProductionRunController extends Controller
             'creator',
             'reversal.reversedBy',
             'stockMovements.inventoryItem',
+            'costAllocations.expense',
+            'journalEntries',
         ]);
 
         return view('production.runs.reverse', compact('productionRun'));

@@ -359,6 +359,7 @@
                         >
                             <span>Balance Sheet</span>
                         </a>
+                        <a href="{{ route('accounting.production-costs') }}" class="taala-menu-link {{ request()->routeIs('accounting.production-costs') ? 'active' : '' }}"><span>Production Costs</span></a>
                         <a href="{{ route('accounting.inventory-costing') }}" class="taala-menu-link {{ request()->routeIs('accounting.inventory-costing*') ? 'active' : '' }}"><span>Inventory Costing</span></a>
                         <a
                             href="{{ route('accounting.profit-loss') }}"
