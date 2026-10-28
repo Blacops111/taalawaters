@@ -76,7 +76,7 @@ class InventoryValuationTest extends TestCase
         $this->activate();
         $this->at('2026-10-29 12:00:00');
         $this->movement($this->material, '100', 'purchase_received', 30000);
-        $this->post('300.00', '2026-10-29');
+        $this->postInventoryJournal('300.00', '2026-10-29');
         $this->assertSame('2.0000', $this->report()['rows']->sole()->average_cost);
         $later = $this->report('2026-10-29');
         $this->assertSame(200000, $later['rows']->sole()->quantity_milli);
@@ -89,8 +89,8 @@ class InventoryValuationTest extends TestCase
     {
         $this->activate();
         $this->at('2026-10-30 12:00:00');
-        $this->post('0.01', '2026-10-28');
-        $this->post('0.02', '2026-10-29');
+        $this->postInventoryJournal('0.01', '2026-10-28');
+        $this->postInventoryJournal('0.02', '2026-10-29');
         $draft = JournalEntry::create(['entry_date' => '2026-10-28', 'status' => 'draft', 'description' => 'Not posted', 'posted_by' => $this->admin->id]);
         $draft->lines()->create(['accounting_account_id' => $this->account('1300')->id, 'debit' => 99, 'credit' => 0]);
         $this->account('1300')->update(['is_active' => false]);
@@ -124,7 +124,7 @@ class InventoryValuationTest extends TestCase
         $this->at('2026-10-29 12:00:00');
         $later = $this->item('NEW-HISTORY');
         $this->movement($later, '10', 'purchase_received', 3000);
-        $this->post('30', '2026-10-29');
+        $this->postInventoryJournal('30', '2026-10-29');
         $this->assertCount(1, $this->report()['rows']);
         $this->assertCount(2, $this->report('2026-10-29')['rows']);
         DB::table('inventory_cost_balances')->where('inventory_item_id', $this->material->id)
@@ -278,7 +278,7 @@ class InventoryValuationTest extends TestCase
         return AccountingAccount::where('code', $code)->firstOrFail();
     }
 
-    private function post(string $amount, string $date): JournalEntry
+    private function postInventoryJournal(string $amount, string $date): JournalEntry
     {
         return app(JournalPostingService::class)->post($this->admin, $date, 'Valuation test receipt', [
             ['account_id' => $this->account('1300')->id, 'debit' => $amount],
