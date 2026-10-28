@@ -24,6 +24,17 @@ class AccountingController extends Controller
         return view('accounting.accounts', compact('accounts'));
     }
 
+    public function inventoryValuation(Request $request, \App\Services\InventoryValuationService $service): View
+    {
+        $validated = $request->validate([
+            'as_of' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:'.now()->utc()->toDateString()],
+        ]);
+
+        return view('accounting.inventory-valuation', $service->report(
+            $validated['as_of'] ?? now()->utc()->toDateString(),
+        ));
+    }
+
     public function trialBalance(Request $request, TrialBalanceService $service): View
     {
         $validated = $request->validate([

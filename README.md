@@ -2,6 +2,12 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
+## Production launch plan
+
+Follow [the implementation and production launch plan](docs/production-readiness-plan.md) in numbered increments. It covers accounting completion; the agreed Super Admin, Admin, Customer, Stock Manager, Sales Manager, Accountant, Driver and public Guest access; password recovery and one-minute inactivity logout; the V2 dashboard, permission-aware search and settings/themes; new-user tours and Help; responsive public Home/About/Contact/map pages and chatbot-to-agent handoff; a separately restricted payroll payments module for one designated verified account; meter/data cutover; staging/security/performance/recovery checks; and pilot/deployment.
+
+Current increment: **1.1 Historical inventory valuation — implemented, local tests and browser verification pending**. Payroll details, the designated email, customer portal scope, production/purchase approval permissions, device details and contact handoff arrangements will be confirmed before their respective increments. General administrator roles will not automatically grant payroll access.
+
 ## Current checkpoint — 28 October 2026
 
 **Phase 7 (Accounting) is in progress.** Moving weighted-average material costing and automatic sales COGS are now **owner-verified**. Implementation commit `e41beff` and access-test correction `56a552f` passed 25 costing tests / 210 assertions plus 129 related regression tests / 799 assertions: **154 tests / 1,009 assertions total**. The owner confirmed the requested browser workflow with `inventory costing ok`. This confirms the local milestone; production deployment and a current full-suite run are separate checks. On another database, costing remains inactive until opening values are explicitly approved. Production expense allocation is now also owner-verified: 154 tests / 1,216 assertions across its focused and regression groups, followed by `production cost allocation ok`.
@@ -47,7 +53,27 @@ php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaym
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
 
-## Latest increment — Production expense allocation (owner-verified)
+## Latest increment — Historical inventory valuation (verification pending)
+
+Accounting → Historical Inventory Valuation reconstructs closing quantity and value per item from the approved opening snapshot plus recorded costed movements through the selected UTC calendar day. It compares total value to posted account 1300 Inventory on the same date, showing the signed difference. Today's mutable cost balances are not used to reconstruct earlier dates. Average costs are derived for display only; totals use recorded integer cents.
+
+Dates before costing activation show an explicit unavailable state rather than invented values. Future dates are rejected. Inactive and zero-value items remain included, later-created items are excluded from earlier dates, and reversals affect their own movement/journal dates. Missing snapshots, quantity inconsistencies, invalid balances or a missing/invalid Inventory account prevent a green reconciliation state. Current item names/units/status label historical balances; this is not a frozen period-close snapshot and later backdated journals can change prior reports. The report is read-only and uses the existing admin authorization until the planned role rollout.
+
+No migration is required. From `water-system/`:
+
+```bash
+git fetch origin taala-v2-development
+git merge --ff-only FETCH_HEAD
+php artisan view:clear
+php artisan test --filter=InventoryValuation
+php artisan test --filter='InventoryCosting|ProductionCostAllocation|TrialBalance|BalanceSheet'
+```
+
+14 focused tests cover unavailable dates, opening snapshots, same-second activation/movement boundaries, inclusive cutoff, receipts/averages, draft exclusion, inactive items/accounts, escaping, newly added items, immutable history reconstruction, missing snapshots, inconsistent quantities, fractional rounding, production allocations, sales and reversals, read-only behavior and authorization. Static PHP parsing, Blade expression/control-block checks and diff checks were performed; **Laravel tests have not run here because PHP is unavailable**. Owner runtime and browser verification are pending.
+
+Browser check on the test database: choose an activation-or-later day with known activity and compare quantities/value with the recorded transactions and Trial Balance account 1300. Choose a day before and after a known receipt, sale or reversal and verify only the appropriate activity is included. A date before activation must show unavailable. This check requires no new live transactions or changes to opening values.
+
+## Previous verified increment — Production expense allocation (owner-verified)
 
 When completing a **new** production run, an admin can optionally select up to 20 existing operating expenses, enter the amount attributable to that batch and record its allocation basis. Record production labour under 5500 General Operating Expense, electricity under 5300 Utilities, and eligible production overhead under 5400 Repairs or 5500 General Operating Expense. The form lists unallocated balances; Accounting → Production Costs provides searchable, paginated allocation history linked to batch journals. Expense history shows amounts currently allocated to production.
 
@@ -97,7 +123,7 @@ After activation:
 - Sale reversals restore the original quantity/value and reverse all original journal lines. Production reversals restore original costs only when no subsequent movements exist for any input/output item; otherwise a reviewed correction is required.
 - Damage/wastage/decreases post Dr 5500 / Cr 1300. Positive corrections use the existing average and post Dr 1300 / Cr 5500; increases from empty stock are blocked because no cost is known. New physical supplies use approved Goods Receiving; legacy manual opening/receipt forms cannot bypass costing.
 - Costs use Brick Math decimal arithmetic (already installed through the locked Laravel dependencies), integer thousandths for quantities and integer cents for money. The final issue takes residual cents. Costed movements are immutable. A consistent transaction lock serializes stock writes and setup; backdating before an item's latest costed movement is rejected.
-- The page shows current recorded quantity, average cost, valuation, costed movement history and the reconciliation to account 1300. It is a current ledger view, not a historical as-of valuation report.
+- The page shows current recorded quantity, average cost, valuation, costed movement history and the reconciliation to account 1300. That page remains the current ledger view; the separate Historical Inventory Valuation increment above adds an as-of report.
 
 **Scope and cutover:** This is material costing, not full absorption costing. Setup explicitly approves zero acquisition cost for meter-managed borehole water. That verified material-only increment left labour, pumping electricity and overhead separately expensed. The newer allocation increment above adds explicit conversion costs to new batches and is now locally owner-verified. Resolve corrections to old sales/production before activation: pre-costing movements have no cost snapshot and cannot be automatically reversed after cutover. Approved zero opening values are accepted deliberately; missing values are rejected. A new item with no prior stock starts at zero and acquires value through approved receipts/production. Legacy data is never erased.
 
@@ -751,20 +777,24 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 
 ## Current checkpoint — Production expense allocation verified
 
-Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The allocation workflow is now also owner-verified: 154 tests / 1,216 assertions across its requested groups, followed by browser confirmation. Historical inventory valuation is a proposed next accounting increment; it has not yet been implemented.
+Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The allocation workflow is now also owner-verified: 154 tests / 1,216 assertions across its requested groups, followed by browser confirmation. Historical inventory valuation is now implemented as plan increment 1.1 and awaits its focused tests, affected regressions and browser verification.
 
 The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water retains its explicitly approved zero acquisition cost. Eligible recorded labour, power and overhead can now be allocated when completing new batches; unallocated costs remain expenses. Automatic overhead rates, payroll/accrual integration and repricing existing batches remain outside this increment.
 
 ## Remaining roadmap
 
-- Any separately agreed automatic overhead-rate or payroll/accrual integration.
-- Historical inventory valuation and additional accounting exports/period-closing workflows, as agreed.
-- Phase 8: V2 dashboard and broader management reporting; existing accounting reports are already implemented.
-- Phase 9: expanded role permissions and security hardening.
-- Phase 10: current full-suite verification, performance/load testing, backups, monitoring and deployment.
-- Physical meter integration once the real device communication method and flow characteristics are known.
-- Legacy data migration/removal only after explicit cutover rules are agreed.
+The authoritative sequence and completion checks are in [the production launch plan](docs/production-readiness-plan.md):
+
+1. Complete accounting reports, statements, correction controls and period locking; verify historical inventory valuation first.
+2. Roll out agreed roles, customer isolation, password recovery and one-minute inactivity logout.
+3. Build the V2 dashboard, permission-aware search and personal/company settings.
+4. Add role-aware onboarding, Help documentation and cross-system responsive/accessibility review.
+5. Build the public website, approved map/contact information and FAQ chatbot with human handoff.
+6. Build restricted payroll payments after receiving the owner's details and designated verified email.
+7. Verify operational scenarios, physical meter integration, real data and legacy cutover.
+8. Complete full-suite/MySQL staging, security, performance, hosting, monitoring and tested backup recovery.
+9. Train users, run a controlled pilot, approve cutover and deploy a tagged release.
 
 ## Project status note
 
-This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS were verified with 154 tests / 1,009 assertions and browser confirmation. Production conversion-cost allocation is the latest owner-verified milestone: 154 tests / 1,216 assertions across its requested test groups and browser confirmation. These overlapping checkpoint totals must not be added together as a unique-test count. No current full-suite pass or production readiness is claimed.
+This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS were verified with 154 tests / 1,009 assertions and browser confirmation. Production conversion-cost allocation is the latest owner-verified milestone: 154 tests / 1,216 assertions across its requested test groups and browser confirmation. These overlapping checkpoint totals must not be added together as a unique-test count. Historical inventory valuation is implemented but not yet owner-verified. No current full-suite pass or production readiness is claimed.
