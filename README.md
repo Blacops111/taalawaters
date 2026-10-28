@@ -4,11 +4,11 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 
 ## Current checkpoint — 28 October 2026
 
-**Phase 7 (Accounting) is in progress.** The latest implementation is moving weighted-average material costing and automatic sales COGS, published in commit `e41beff` on `taala-v2-development`. Its first local costing run returned **24 passed, 1 failed (177 assertions)**. The failure was an access-test expectation: the existing admin middleware redirects non-admins to `/dashboard` with `Access denied.`, while the test expected HTTP 403. The corrected test now checks that redirect for user/staff/driver roles using valid input and verifies no activation or accounting writes. A rerun, related regressions and browser activation verification remain pending. Pulling the branch and running its migration leaves costing inactive until the admin approves opening values.
+**Phase 7 (Accounting) is in progress.** Moving weighted-average material costing and automatic sales COGS are now **owner-verified**. Implementation commit `e41beff` and access-test correction `56a552f` passed 25 costing tests / 210 assertions plus 129 related regression tests / 799 assertions: **154 tests / 1,009 assertions total**. The owner confirmed the requested browser workflow with `inventory costing ok`. This confirms the local milestone; production deployment and a current full-suite run are separate checks. On another database, costing remains inactive until opening values are explicitly approved.
 
 | Area | Latest confirmed status |
 | --- | --- |
-| Inventory, production, sales and customers | Earlier verified V2 milestones; run the new costing regressions before treating those integrations as verified |
+| Inventory, production, sales and customers | Earlier verified V2 milestones; related costing regressions now passed |
 | Purchasing and delivery workflows | Implemented; suppliers, purchase approvals/receiving, drivers, vehicles, assignments and delivery notes are present |
 | Goods receipt accounting | Owner confirmed 4 tests / 25 assertions and browser verification |
 | Supplier payments | Owner confirmed 4 tests / 33 assertions and browser verification |
@@ -18,17 +18,24 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 | Operating expenses | Owner confirmed 12 tests / 138 assertions and browser verification |
 | Expense reversals | Owner confirmed 10 tests / 100 assertions and browser verification |
 | Profit & Loss | Owner confirmed 10 tests / 65 assertions and browser verification |
-| Inventory material costing and automatic COGS | First local run: 24 passed / 1 access-test failure (177 assertions); expectation corrected; rerun, regressions and browser verification pending |
+| Inventory material costing and automatic COGS | Owner confirmed 25 tests / 210 assertions, related regressions and browser verification |
 
 These are focused milestone results, not a combined current full-suite result. The 123-test / 615-assertion result documented later is the historical **16 September** baseline.
 
 ### Resume here
 
-1. From `water-system/`, sync the branch and run the commands below.
-2. Review the new costing test and regression results; fix any failures before browser activation.
-3. On a test database, open **Accounting → Inventory Costing**, review real opening quantities/values and the reconciliation preview, then verify a receipt → production → sale example against Journal Entries and financial reports.
-4. Confirm the valuation matches account 1300 and that sale costs post **Dr 5100 COGS / Cr 1300 Inventory**. Record the test counts and browser outcome here when confirmed.
-5. Only then agree the next small increment. Production labour/electricity allocation, broader V2 reporting, hardening and deployment remain future work.
+The inventory costing milestone is complete. Local verification reported:
+
+| Test group | Tests passed | Assertions |
+| --- | ---: | ---: |
+| InventoryCosting | 25 | 210 |
+| Purchasing, production, sales and customer/supplier payment regressions | 89 | 538 |
+| Inventory adjustments/receipts, water meter and financial report regressions | 40 | 261 |
+| **Total across these runs** | **154** | **1,009** |
+
+Browser verification was confirmed after the requested opening setup → partial receipt → production → sale checks, including the COGS journal, inventory reconciliation and Profit & Loss. The next proposed increment is production labour/electricity/overhead allocation, preserving the existing expense history and preventing double counting. Allocation rules and implementation remain future work.
+
+The commands below reproduce the verified test groups from `water-system/`; they are not outstanding tasks for this milestone:
 
 ```bash
 git fetch origin taala-v2-development
@@ -39,7 +46,7 @@ php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaym
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
 
-## Latest increment — Moving weighted-average inventory material costing
+## Latest verified increment — Moving weighted-average inventory material costing
 
 Accounting → Inventory Costing adds an explicit, admin-only activation workflow. Before activation, existing operations retain their previous accounting behavior. New goods receipts preserve approved unit cost and rounded receipt-value snapshots immediately. No historical receipt costs are guessed or backfilled.
 
@@ -68,9 +75,9 @@ php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaym
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
 
-The owner reported the migration was already applied (`Nothing to migrate`). On 28 October, the first local costing run returned 24 passed and 1 failed (177 assertions); the access-control test expected 403 instead of the established denial redirect. That test expectation has been corrected; the corrected suite has not yet been confirmed passing.
+The owner reported the migration was already applied (`Nothing to migrate`). On 28 October, the first local costing run returned 24 passed and 1 failed (177 assertions); the access-control test expected 403 instead of the established denial redirect. That test expectation was corrected in `56a552f`; the owner subsequently confirmed all 25 tests / 210 assertions passing, both related regression groups passing, and browser verification.
 
-25 focused costing tests were added, including the complete purchase → production → sale path, opening reconciliation, rollback, rounded residuals, cost snapshots, customer payments, reversals and access control. Static PHP parsing and diff checks passed in the authoring environment. PHP is unavailable there, so these Laravel tests and MySQL migration execution **have not been run by the authoring agent** and require local verification.
+25 focused costing tests were added, including the complete purchase → production → sale path, opening reconciliation, rollback, rounded residuals, cost snapshots, customer payments, reversals and access control. Static PHP parsing and diff checks passed in the authoring environment. PHP is unavailable there, so the authoring agent did not execute Laravel tests. Runtime verification is based on the owner-provided results recorded above.
 
 After tests pass, use a test database to review/activate a known opening valuation. Example: 100 caps worth KES 200; receive another 100 at KES 3. The average becomes KES 2.50. A recipe using one cap per finished unit transfers KES 150 for 60 units (assuming other components have approved zero cost for this example). Selling 20 units posts KES 50 COGS; remaining caps are KES 350 and finished goods KES 100, matching Inventory KES 450. Verify the sale journal, customer payment, reversal, Profit & Loss and the valuation reconciliation. Do not enter invented opening costs in the live database.
 
@@ -511,7 +518,7 @@ The reversal flow has been verified both automatically and manually against real
 
 Status: **Implemented; receipt accounting and supplier settlements locally verified**
 
-Supplier records, purchase requests/items, submission and approval/rejection, approved unit costs, partial goods receiving and receipt history are implemented. Receiving updates the V2 stock ledger and posts Inventory / Accounts Payable. Supplier payments settle the payable through Cash or Bank. The new costing integration still requires the regression checks listed above.
+Supplier records, purchase requests/items, submission and approval/rejection, approved unit costs, partial goods receiving and receipt history are implemented. Receiving updates the V2 stock ledger and posts Inventory / Accounts Payable. Supplier payments settle the payable through Cash or Bank. The owner has also confirmed the related costing regression checks listed above.
 
 ## Phase 6 — Deliveries / Vehicles / Drivers
 
@@ -523,7 +530,7 @@ V2 includes drivers, vehicles, driver–vehicle assignments, delivery notes/item
 
 Status: **In progress**
 
-Chart of Accounts, journal posting/history, sales and goods receipt accounting, supplier/customer payments, operating expenses and expense reversals are implemented. Trial Balance, Balance Sheet and Profit & Loss have passed the owner's focused tests and browser checks. Material costing and automatic COGS are the current unverified increment; implementation details, limitations and activation instructions are above.
+Chart of Accounts, journal posting/history, sales and goods receipt accounting, supplier/customer payments, operating expenses and expense reversals are implemented. Trial Balance, Balance Sheet and Profit & Loss have passed the owner's focused tests and browser checks. Material costing and automatic COGS are now owner-verified; implementation details, limitations and activation instructions are above.
 
 ## Taala Crystal branding
 
@@ -704,9 +711,9 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 - Add focused tests for stock, financial and authorization behavior.
 - Fix errors before moving to the next module.
 
-## Next work — Verify inventory material costing
+## Next proposed work — Production conversion costs
 
-The immediate task is local verification of commit `e41beff`, using the migration and focused/regression commands in **Resume here**. Costing remains inactive until opening valuations are reviewed and approved in the UI. Do not mark this milestone complete until the owner confirms both automated tests and browser behavior.
+Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The next proposed accounting increment is allocating eligible production labour, electricity and overhead to finished inventory. It must preserve expense/payment history, prevent duplicate allocation and retain auditable reversals. No conversion-cost allocation has been implemented yet.
 
 The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water uses an explicitly approved zero acquisition cost, while labour, pumping electricity and other overhead remain separately expensed. Allocating those costs into inventory is not implemented yet.
 
@@ -722,4 +729,4 @@ The implementation uses moving weighted average. Existing history is preserved; 
 
 ## Project status note
 
-This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Profit & Loss is the latest owner-verified accounting milestone. Moving weighted-average material costing and automatic COGS are implemented and awaiting local verification. No current full-suite pass, live costing activation or production readiness is claimed. Update this checkpoint with the actual migration, test and browser results when they are provided.
+This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Moving weighted-average material costing and automatic COGS are the latest owner-verified accounting milestone: 154 tests / 1,009 assertions across the recorded test groups and browser confirmation. Production conversion-cost allocation is proposed next. No current full-suite pass or production readiness is claimed.
