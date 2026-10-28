@@ -258,13 +258,29 @@ class InventoryCostingTest extends TestCase
 
     public function test_guests_and_non_admins_cannot_view_preview_or_activate(): void
     {
+        $item = $this->item('cap', 10);
+        // Valid input ensures authorization, rather than input validation, blocks activation.
+        $data = $this->setupData([$item->id => '25.00']);
         $this->get(route('accounting.inventory-costing'))->assertRedirect(route('login'));
-        $this->post(route('accounting.inventory-costing.preview'))->assertRedirect(route('login'));
-        $this->post(route('accounting.inventory-costing.activate'))->assertRedirect(route('login'));
-        $this->actingAs(User::factory()->create(['role' => 'user']));
-        $this->get(route('accounting.inventory-costing'))->assertForbidden();
-        $this->post(route('accounting.inventory-costing.preview'))->assertForbidden();
-        $this->post(route('accounting.inventory-costing.activate'))->assertForbidden();
+        $this->post(route('accounting.inventory-costing.preview'), $data)->assertRedirect(route('login'));
+        $this->post(route('accounting.inventory-costing.activate'), $data)->assertRedirect(route('login'));
+        foreach (['user', 'staff', 'driver'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]));
+            $this->get(route('accounting.inventory-costing'))
+                ->assertRedirect('/dashboard')->assertSessionHas('error', 'Access denied.');
+            $this->post(route('accounting.inventory-costing.preview'), $data)
+                ->assertRedirect('/dashboard')->assertSessionHas('error', 'Access denied.');
+            $this->post(route('accounting.inventory-costing.activate'), $data)
+                ->assertRedirect('/dashboard')->assertSessionHas('error', 'Access denied.');
+        }
+        $setup = InventoryCostingSetup::findOrFail(1);
+        $this->assertFalse($setup->is_active);
+        $this->assertNull($setup->activated_at);
+        $this->assertNull($setup->approved_by);
+        $this->assertDatabaseCount('inventory_cost_balances', 0);
+        $this->assertDatabaseCount('journal_entries', 0);
+        $this->assertDatabaseCount('stock_movements', 1);
+        $this->assertSame(10000, Cost::quantityMilli($item->id));
     }
 
     public function test_exact_decimal_math_handles_fractional_quantities_and_large_products(): void

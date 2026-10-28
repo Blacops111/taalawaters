@@ -2,9 +2,9 @@
 
 Taala Crystal is a Laravel-based business management system for the bottled and bulk water operations of Uholo Fresh Springs Co. Ltd. V2 is being rebuilt incrementally on the `taala-v2-development` branch so that each module is tested and stabilized before the next phase begins.
 
-## Current checkpoint — 27 September 2026
+## Current checkpoint — 28 October 2026
 
-**Phase 7 (Accounting) is in progress.** The latest implementation is moving weighted-average material costing and automatic sales COGS, published in commit `e41beff` on `taala-v2-development`. It is implemented but **not yet locally verified or confirmed activated**. Pulling the branch and running its migration leaves costing inactive until the admin approves opening values.
+**Phase 7 (Accounting) is in progress.** The latest implementation is moving weighted-average material costing and automatic sales COGS, published in commit `e41beff` on `taala-v2-development`. Its first local costing run returned **24 passed, 1 failed (177 assertions)**. The failure was an access-test expectation: the existing admin middleware redirects non-admins to `/dashboard` with `Access denied.`, while the test expected HTTP 403. The corrected test now checks that redirect for user/staff/driver roles using valid input and verifies no activation or accounting writes. A rerun, related regressions and browser activation verification remain pending. Pulling the branch and running its migration leaves costing inactive until the admin approves opening values.
 
 | Area | Latest confirmed status |
 | --- | --- |
@@ -18,7 +18,7 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 | Operating expenses | Owner confirmed 12 tests / 138 assertions and browser verification |
 | Expense reversals | Owner confirmed 10 tests / 100 assertions and browser verification |
 | Profit & Loss | Owner confirmed 10 tests / 65 assertions and browser verification |
-| Inventory material costing and automatic COGS | 25 focused tests added; static checks passed; local migration, Laravel tests and browser verification pending |
+| Inventory material costing and automatic COGS | First local run: 24 passed / 1 access-test failure (177 assertions); expectation corrected; rerun, regressions and browser verification pending |
 
 These are focused milestone results, not a combined current full-suite result. The 123-test / 615-assertion result documented later is the historical **16 September** baseline.
 
@@ -67,6 +67,8 @@ php artisan test --filter=InventoryCosting
 php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaymentAccounting|SupplierPaymentAccounting'
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
+
+The owner reported the migration was already applied (`Nothing to migrate`). On 28 October, the first local costing run returned 24 passed and 1 failed (177 assertions); the access-control test expected 403 instead of the established denial redirect. That test expectation has been corrected; the corrected suite has not yet been confirmed passing.
 
 25 focused costing tests were added, including the complete purchase → production → sale path, opening reconciliation, rollback, rounded residuals, cost snapshots, customer payments, reversals and access control. Static PHP parsing and diff checks passed in the authoring environment. PHP is unavailable there, so these Laravel tests and MySQL migration execution **have not been run by the authoring agent** and require local verification.
 
@@ -720,4 +722,4 @@ The implementation uses moving weighted average. Existing history is preserved; 
 
 ## Project status note
 
-This README reflects the `taala-v2-development` checkpoint as of **27 September 2026**. Profit & Loss is the latest owner-verified accounting milestone. Moving weighted-average material costing and automatic COGS are implemented and awaiting local verification. No current full-suite pass, live costing activation or production readiness is claimed. Update this checkpoint with the actual migration, test and browser results when they are provided.
+This README reflects the `taala-v2-development` checkpoint as of **28 October 2026**. Profit & Loss is the latest owner-verified accounting milestone. Moving weighted-average material costing and automatic COGS are implemented and awaiting local verification. No current full-suite pass, live costing activation or production readiness is claimed. Update this checkpoint with the actual migration, test and browser results when they are provided.
