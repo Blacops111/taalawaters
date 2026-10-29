@@ -1,6 +1,6 @@
 # Taala Crystal — implementation and production launch plan
 
-Updated: 28 October 2026. Branch: `taala-v2-development`.
+Updated: 29 October 2026. Branch: `taala-v2-development`.
 
 ## How we will work
 
@@ -15,7 +15,7 @@ Status legend: **Owner-verified** means focused tests, affected regressions and 
 | Increment | Work | Completion check | Status |
 | --- | --- | --- | --- |
 | 1.1 | Historical inventory valuation by date; opening values plus recorded quantity/value movements; reconciliation to posted account 1300 | Inclusive cutoff, reversals on their own dates, inactive items, no invented pre-activation values; report totals reconcile and differences remain visible | Owner-verified — 86 tests / 693 assertions and browser confirmation |
-| 1.2 | Customer and supplier statements | Opening balance + dated activity = closing balance; only authorized records visible | Planned |
+| 1.2 | Customer and supplier statements | Opening balance + dated activity = closing balance; only authorized records visible | Pending owner verification — implemented; 21 focused tests / 227 assertions + 73 regressions / 495 assertions passed here |
 | 1.3 | Outstanding balances and ageing | Confirm payment terms/due dates first; ageing agrees with receivables/payables and does not invent overdue dates | Planned |
 | 1.4 | Financial report PDF/Excel exports | Export totals/date ranges match screen; authorized access and safe user text | Planned |
 | 1.5 | Review missing payment/receipt correction workflows; implement agreed audited corrections | No destructive editing, duplicate stock effects, duplicate refunds or lost audit history | Planned |
@@ -124,4 +124,4 @@ Gather hardware and migration information early while software increments procee
 
 ## Immediate next action
 
-**1.1 Historical inventory valuation** is complete. Next is **1.2 Customer and supplier statements**: opening balance, dated transactions/payments and closing balance, with authorized access. Its implementation, focused tests, affected regressions and owner browser verification must pass before advancing to 1.3. Keep this document and README synchronized as each milestone completes. No delivery dates are promised before hardware, payroll, external-service and business-policy dependencies are known.
+**1.1 Historical inventory valuation** is complete. **1.2 Customer and supplier statements** is implemented: opening balance, posted transactions/payments, reversals, closing balance, searchable directories, pagination and control-account coverage warnings. Authoring checks on PHP 8.3 / SQLite passed 94 tests / 722 assertions; owner local tests and browser verification are the next action. These must pass before advancing to 1.3, where payment terms and due-date rules will first be confirmed. Keep this document and README synchronized as each milestone completes. No delivery dates are promised before hardware, payroll, external-service and business-policy dependencies are known.

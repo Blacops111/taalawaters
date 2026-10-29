@@ -359,6 +359,8 @@
                         >
                             <span>Balance Sheet</span>
                         </a>
+                        <a href="{{ route('accounting.customer-statements') }}" class="taala-menu-link {{ request()->routeIs('accounting.customer-statements*') ? 'active' : '' }}"><span>Customer Statements</span></a>
+                        <a href="{{ route('accounting.supplier-statements') }}" class="taala-menu-link {{ request()->routeIs('accounting.supplier-statements*') ? 'active' : '' }}"><span>Supplier Statements</span></a>
                         <a href="{{ route('accounting.production-costs') }}" class="taala-menu-link {{ request()->routeIs('accounting.production-costs') ? 'active' : '' }}"><span>Production Costs</span></a>
                         <a href="{{ route('accounting.inventory-valuation') }}" class="taala-menu-link {{ request()->routeIs('accounting.inventory-valuation') ? 'active' : '' }}"><span>Historical Inventory Valuation</span></a>
                         <a href="{{ route('accounting.inventory-costing') }}" class="taala-menu-link {{ request()->routeIs('accounting.inventory-costing*') ? 'active' : '' }}"><span>Inventory Costing</span></a>

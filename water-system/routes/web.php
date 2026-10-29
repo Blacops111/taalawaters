@@ -101,6 +101,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/accounting/supplier-payments', [SupplierPaymentController::class, 'store'])
         ->name('accounting.supplier-payments.store');
 
+    Route::get('/accounting/customer-statements', [\App\Http\Controllers\PartyStatementController::class, 'customers'])->name('accounting.customer-statements');
+    Route::get('/accounting/customer-statements/{customer}', [\App\Http\Controllers\PartyStatementController::class, 'customer'])->name('accounting.customer-statements.show');
+    Route::get('/accounting/supplier-statements', [\App\Http\Controllers\PartyStatementController::class, 'suppliers'])->name('accounting.supplier-statements');
+    Route::get('/accounting/supplier-statements/{supplier}', [\App\Http\Controllers\PartyStatementController::class, 'supplier'])->name('accounting.supplier-statements.show');
+
     Route::get('/accounting/customer-payments', [CustomerPaymentController::class, 'index'])
         ->name('accounting.customer-payments');
 

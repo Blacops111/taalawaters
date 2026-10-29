@@ -47,6 +47,7 @@
                                     @endif
                                 </td>
                                 <td class="text-end">
+                                    <a href="{{ route('accounting.customer-statements.show', $customer) }}" class="btn btn-sm btn-outline-secondary">Statement</a>
                                     <a href="{{ route('customers.edit', $customer) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                 </td>
                             </tr>
