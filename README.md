@@ -6,7 +6,7 @@ Taala Crystal is a Laravel-based business management system for the bottled and 
 
 Follow [the implementation and production launch plan](docs/production-readiness-plan.md) in numbered increments. It covers accounting completion; the agreed Super Admin, Admin, Customer, Stock Manager, Sales Manager, Accountant, Driver and public Guest access; password recovery and one-minute inactivity logout; the V2 dashboard, permission-aware search and settings/themes; new-user tours and Help; responsive public Home/About/Contact/map pages and chatbot-to-agent handoff; a separately restricted payroll payments module for one designated verified account; meter/data cutover; staging/security/performance/recovery checks; and pilot/deployment.
 
-Completed increment: **1.1 Historical inventory valuation — owner-verified**. Current increment: **1.2 Customer and supplier statements — implemented and tested here; owner verification pending**. Payroll details, the designated email, customer portal scope, production/purchase approval permissions, device details and contact handoff arrangements will be confirmed before their respective increments. General administrator roles will not automatically grant payroll access.
+Completed increment: **1.1 Historical inventory valuation — owner-verified**. Completed increment: **1.2 Customer and supplier statements — owner-verified**. Next: **1.3 Outstanding balances and ageing**, after confirming payment terms and due-date rules. Payroll details, the designated email, customer portal scope, production/purchase approval permissions, device details and contact handoff arrangements will be confirmed before their respective increments. General administrator roles will not automatically grant payroll access.
 
 ## Current checkpoint — 29 October 2026
 
@@ -27,7 +27,7 @@ Completed increment: **1.1 Historical inventory valuation — owner-verified**. 
 | Inventory material costing and automatic COGS | Owner confirmed 25 tests / 210 assertions, related regressions and browser verification before the new allocation increment |
 | Production labour/electricity/overhead allocation | Owner confirmed 27 tests / 222 assertions, 127 regression tests / 994 assertions and browser verification |
 | Historical inventory valuation | Owner confirmed 14 tests / 117 assertions, 72 regression tests / 576 assertions and browser verification |
-| Customer and supplier statements | Implemented; 21 focused tests / 227 assertions and 73 related regressions / 495 assertions passed here; owner verification pending |
+| Customer and supplier statements | Owner confirmed 21 focused tests / 227 assertions, 73 regressions / 495 assertions and browser verification |
 
 These are focused milestone results, not a combined current full-suite result. The 123-test / 615-assertion result documented later is the historical **16 September** baseline.
 
@@ -55,7 +55,7 @@ php artisan test --filter='PurchaseReceipt|ProductionRun|SalesOrder|CustomerPaym
 php artisan test --filter='InventoryReceipt|InventoryAdjustment|WaterMeter|ProfitLoss|TrialBalance|BalanceSheet'
 ```
 
-## Latest increment — Customer and supplier statements (owner verification pending)
+## Latest verified increment — Customer and supplier statements
 
 Accounting → Customer Statements / Supplier Statements adds searchable, paginated directories and read-only, date-filtered statements. The Customers and Suppliers lists also link directly to each statement. Inactive parties remain accessible. Access uses the existing admin middleware; customer self-service and expanded staff roles remain separate roadmap increments.
 
@@ -79,7 +79,7 @@ php artisan test --filter=PartyStatement
 php artisan test --filter='CustomerPaymentAccounting|SupplierPaymentAccounting|SalesOrderAccounting|SalesOrderReversal|PurchaseReceiptAccounting|TrialBalance|BalanceSheet|JournalEntryHistory|CustomerManagement|SupplierManagement'
 ```
 
-Authoring verification on **29 October 2026**, using temporary PHP 8.3, locked Composer dependencies and SQLite: **21 statement tests / 227 assertions**, plus **73 affected regression tests / 495 assertions** — **94 tests / 722 assertions total**. The Vite production asset build and diff checks also passed. No dependency lock files were changed. The initial run identified missing local build/environment prerequisites; after preparing those, both groups passed without changing application behavior to bypass tests. These are focused checks, not a full-suite or MySQL production verification claim. Owner local tests and browser confirmation are pending.
+Authoring verification on **29 October 2026**, using temporary PHP 8.3, locked Composer dependencies and SQLite: **21 statement tests / 227 assertions**, plus **73 affected regression tests / 495 assertions** — **94 tests / 722 assertions total**. The Vite production asset build and diff checks also passed. No dependency lock files were changed. The initial run identified missing local build/environment prerequisites; after preparing those, both groups passed without changing application behavior to bypass tests. These are focused checks, not a full-suite or MySQL production verification claim. The owner subsequently confirmed the same **94 tests / 722 assertions** passing locally, then verified the customer and supplier opening/closing balances, date filtering and journal links with `customer supplier statements ok`. Increment 1.2 is complete.
 
 Browser check after local tests: open one customer and one supplier with known transactions/payments. Verify opening + period change = closing, follow a journal link, and move the start date past an earlier sale/receipt to check that it moves into opening balance. Check the date before/after a known sale reversal if one exists. A blank period must carry prior balance; an inactive party must remain selectable. Review any unassigned-entry warnings instead of assuming a zero statement means no debt. Existing test records can be used; this check needs no new live transactions.
 
@@ -807,7 +807,7 @@ Current/planned practices include indexed foreign keys and common filters, pagin
 
 ## Current checkpoint — Production expense allocation verified
 
-Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The allocation workflow is now also owner-verified: 154 tests / 1,216 assertions across its requested groups, followed by browser confirmation. Historical inventory valuation (plan increment 1.1) is now owner-verified: 86 tests / 693 assertions across its requested groups plus browser confirmation. Increment 1.2, customer and supplier statements, is now implemented with 94 tests / 722 assertions passing here; owner local/browser verification is pending.
+Material costing is verified: 154 tests / 1,009 assertions across the focused and related regression groups, followed by the owner’s browser confirmation. The allocation workflow is now also owner-verified: 154 tests / 1,216 assertions across its requested groups, followed by browser confirmation. Historical inventory valuation (plan increment 1.1) is now owner-verified: 86 tests / 693 assertions across its requested groups plus browser confirmation. Increment 1.2, customer and supplier statements, is owner-verified with 94 tests / 722 assertions and browser confirmation. Next is increment 1.3; confirm customer/supplier payment terms and due-date rules before implementing overdue ageing.
 
 The implementation uses moving weighted average. Existing history is preserved; opening values are entered explicitly. Borehole water retains its explicitly approved zero acquisition cost. Eligible recorded labour, power and overhead can now be allocated when completing new batches; unallocated costs remain expenses. Automatic overhead rates, payroll/accrual integration and repricing existing batches remain outside this increment.
 
@@ -815,7 +815,7 @@ The implementation uses moving weighted average. Existing history is preserved; 
 
 The authoritative sequence and completion checks are in [the production launch plan](docs/production-readiness-plan.md):
 
-1. Complete accounting reports, statements, correction controls and period locking; continue with customer and supplier statements after verified historical inventory valuation.
+1. Complete accounting reports, statements, correction controls and period locking; continue with outstanding balances and ageing after confirming payment terms and due-date rules.
 2. Roll out agreed roles, customer isolation, password recovery and one-minute inactivity logout.
 3. Build the V2 dashboard, permission-aware search and personal/company settings.
 4. Add role-aware onboarding, Help documentation and cross-system responsive/accessibility review.
@@ -827,4 +827,4 @@ The authoritative sequence and completion checks are in [the production launch p
 
 ## Project status note
 
-This README reflects the `taala-v2-development` checkpoint as of **29 October 2026**. Moving weighted-average material costing and automatic COGS were verified with 154 tests / 1,009 assertions and browser confirmation. Production conversion-cost allocation was owner-verified with: 154 tests / 1,216 assertions across its requested test groups and browser confirmation. These overlapping checkpoint totals must not be added together as a unique-test count. Historical inventory valuation is the latest owner-verified milestone: 86 tests / 693 assertions across its focused and regression groups plus browser confirmation. Customer and supplier statements are implemented and tested in the authoring environment; owner local/browser verification is pending. No current full-suite pass or production readiness is claimed.
+This README reflects the `taala-v2-development` checkpoint as of **29 October 2026**. Moving weighted-average material costing and automatic COGS were verified with 154 tests / 1,009 assertions and browser confirmation. Production conversion-cost allocation was owner-verified with: 154 tests / 1,216 assertions across its requested test groups and browser confirmation. These overlapping checkpoint totals must not be added together as a unique-test count. Historical inventory valuation was owner-verified with: 86 tests / 693 assertions across its focused and regression groups plus browser confirmation. Customer and supplier statements are the latest owner-verified milestone: 94 tests / 722 assertions across their requested groups plus browser confirmation. No current full-suite pass or production readiness is claimed.
