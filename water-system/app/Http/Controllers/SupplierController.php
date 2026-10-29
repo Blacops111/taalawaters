@@ -31,6 +31,7 @@ class SupplierController extends Controller
             'phone' => isset($validated['phone']) ? trim($validated['phone']) : null,
             'email' => isset($validated['email']) ? strtolower(trim($validated['email'])) : null,
             'address' => isset($validated['address']) ? trim($validated['address']) : null,
+            'payment_terms_days' => $validated['payment_terms_days'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
@@ -54,6 +55,7 @@ class SupplierController extends Controller
             'phone' => isset($validated['phone']) ? trim($validated['phone']) : null,
             'email' => isset($validated['email']) ? strtolower(trim($validated['email'])) : null,
             'address' => isset($validated['address']) ? trim($validated['address']) : null,
+            'payment_terms_days' => $validated['payment_terms_days'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
@@ -70,6 +72,7 @@ class SupplierController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:2000'],
+            'payment_terms_days' => ['nullable', 'integer', 'min:0', 'max:3650'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

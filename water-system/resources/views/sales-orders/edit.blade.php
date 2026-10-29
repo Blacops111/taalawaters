@@ -46,6 +46,7 @@
                 <div class="col-md-3">
                     <div class="text-muted small">Sale Date</div>
                     <strong>{{ $salesOrder->sale_at?->format('Y-m-d H:i') }}</strong>
+                    @if($salesOrder->sale_type === 'business')<div class="small mt-2">Due: {{ $salesOrder->due_date?->format('Y-m-d') ?? 'Due date unknown' }}</div>@endif
                 </div>
             </div>
         </div>

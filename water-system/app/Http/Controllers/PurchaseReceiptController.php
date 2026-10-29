@@ -21,7 +21,7 @@ class PurchaseReceiptController extends Controller
         }
 
         $purchaseRequest->load([
-            'supplier:id,name',
+            'supplier:id,name,payment_terms_days',
             'items' => fn ($query) => $query
                 ->with('inventoryItem:id,sku,name,unit')
                 ->withSum('receiptItems as received_quantity', 'quantity')
@@ -55,6 +55,7 @@ class PurchaseReceiptController extends Controller
 
         $validated = $request->validate([
             'received_at' => ['required', 'date'],
+            'due_date' => ['nullable', 'date_format:Y-m-d'],
             'supplier_delivery_reference' => ['nullable', 'string', 'max:150'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'quantities' => ['required', 'array'],
@@ -73,6 +74,7 @@ class PurchaseReceiptController extends Controller
             $validated['quantities'],
             $validated['supplier_delivery_reference'] ?? null,
             $validated['notes'] ?? null,
+            $validated['due_date'] ?? null,
         );
 
         return redirect()

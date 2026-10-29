@@ -9,6 +9,7 @@ class Supplier extends Model
 {
     protected $fillable = [
         'name',
+        'payment_terms_days',
         'contact_person',
         'phone',
         'email',
@@ -20,6 +21,7 @@ class Supplier extends Model
     {
         return [
             'is_active' => 'boolean',
+            'payment_terms_days' => 'integer',
         ];
     }
 

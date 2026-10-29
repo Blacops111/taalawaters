@@ -51,7 +51,7 @@
                             <option value="">-- Select Business Customer --</option>
                             @foreach($customers as $customer)
                                 <option value="{{ $customer->id }}" @selected((string) old('customer_id') === (string) $customer->id)>
-                                    {{ $customer->name }} — {{ ucwords(str_replace('_', ' ', $customer->customer_type)) }}
+                                    {{ $customer->name }} — {{ ucwords(str_replace('_', ' ', $customer->customer_type)) }} — {{ $customer->payment_terms_days === null ? 'Terms unknown' : $customer->payment_terms_days.' day terms' }}
                                 </option>
                             @endforeach
                         </select>
@@ -70,6 +70,12 @@
                         >
                     </div>
 
+                    <div class="col-md-6">
+                        <label for="due_date" class="form-label">Business sale due date (optional override)</label>
+                        <input type="date" id="due_date" name="due_date" value="{{ is_string(old('due_date')) ? old('due_date') : '' }}" class="form-control @error('due_date') is-invalid @enderror">
+                        @error('due_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Leave blank to use the account's payment terms from the transaction date (UTC). With no terms, the due date stays unknown. Saved dates do not change when account terms change.</div>
+                    </div>
                     <div class="col-12">
                         <label for="notes" class="form-label">Notes <span class="text-muted">(optional)</span></label>
                         <textarea id="notes" name="notes" rows="3" maxlength="2000" class="form-control">{{ old('notes') }}</textarea>
@@ -134,6 +140,8 @@
         function syncCustomerRequirement() {
             const isBusiness = saleType.value === 'business';
             customer.required = isBusiness;
+            document.getElementById('due_date').disabled = !isBusiness;
+            if (!isBusiness) document.getElementById('due_date').value = '';
 
             if (!isBusiness) {
                 customer.value = '';

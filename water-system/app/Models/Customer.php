@@ -9,6 +9,7 @@ class Customer extends Model
 {
     protected $fillable = [
         'name',
+        'payment_terms_days',
         'customer_type',
         'contact_person',
         'phone',
@@ -26,6 +27,7 @@ class Customer extends Model
     {
         return [
             'is_active' => 'boolean',
+            'payment_terms_days' => 'integer',
         ];
     }
 

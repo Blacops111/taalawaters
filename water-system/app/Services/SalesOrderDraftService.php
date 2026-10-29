@@ -16,6 +16,7 @@ class SalesOrderDraftService
         User $user,
         ?CarbonInterface $saleAt = null,
         ?string $notes = null,
+        ?string $dueDate = null,
     ): SalesOrder {
         $saleType = trim($saleType);
 
@@ -45,7 +46,13 @@ class SalesOrderDraftService
             ]);
         }
 
+        if ($saleType === SalesOrder::TYPE_WALK_IN && $dueDate !== null) {
+            throw ValidationException::withMessages(['due_date' => 'Due dates apply only to business customer sales.']);
+        }
         $saleAt = ($saleAt ?? now())->copy()->utc();
+        $dueDate = $saleType === SalesOrder::TYPE_BUSINESS
+            ? app(PaymentTermsService::class)->dueDate($saleAt, $customer->fresh()->payment_terms_days, $dueDate)
+            : null;
         $notes = is_string($notes) ? trim($notes) : null;
 
         return SalesOrder::create([
@@ -54,6 +61,7 @@ class SalesOrderDraftService
             'reference' => null,
             'status' => SalesOrder::STATUS_DRAFT,
             'sale_at' => $saleAt,
+            'due_date' => $dueDate,
             'total_amount' => 0,
             'created_by' => $user->id,
             'notes' => $notes !== '' ? $notes : null,

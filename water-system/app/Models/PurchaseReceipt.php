@@ -11,6 +11,7 @@ class PurchaseReceipt extends Model
 {
     protected $fillable = [
         'reference',
+        'due_date',
         'purchase_request_id',
         'supplier_delivery_reference',
         'received_by',
@@ -18,9 +19,19 @@ class PurchaseReceipt extends Model
         'notes',
     ];
 
+    protected static function booted(): void
+    {
+        static::updating(function (self $model) {
+            if ($model->isDirty('due_date')) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['due_date' => 'Posted transaction due dates cannot be changed.']);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
+            'due_date' => 'date',
             'received_at' => 'datetime',
         ];
     }

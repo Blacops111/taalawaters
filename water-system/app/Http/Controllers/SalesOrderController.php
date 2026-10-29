@@ -216,6 +216,7 @@ class SalesOrderController extends Controller
             ])],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'sale_at' => ['required', 'date'],
+            'due_date' => ['nullable', 'date_format:Y-m-d'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -229,6 +230,7 @@ class SalesOrderController extends Controller
             $request->user(),
             Carbon::parse($validated['sale_at']),
             $validated['notes'] ?? null,
+            $validated['due_date'] ?? null,
         );
 
         return redirect()

@@ -8,6 +8,7 @@
             <h2 class="mb-1">{{ $purchaseRequest->reference }}</h2>
             <p class="text-muted mb-0">
                 Supplier: {{ $purchaseRequest->supplier?->name ?: '—' }}
+                · Terms: {{ $purchaseRequest->supplier?->payment_terms_days === null ? 'Unknown' : $purchaseRequest->supplier->payment_terms_days.' calendar days from each receipt date' }}
             </p>
         </div>
 
@@ -41,6 +42,12 @@
                     @csrf
 
                     <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label for="due_date" class="form-label">Goods receipt due date (optional override)</label>
+                        <input type="date" id="due_date" name="due_date" value="{{ is_string(old('due_date')) ? old('due_date') : '' }}" class="form-control @error('due_date') is-invalid @enderror">
+                        @error('due_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        <div class="form-text">Leave blank to use the account's payment terms from the transaction date (UTC). With no terms, the due date stays unknown. Saved dates do not change when account terms change.</div>
+                    </div>
                         <div class="col-md-4">
                             <label for="received_at" class="form-label">Received At</label>
                             <input
@@ -194,7 +201,7 @@
                                 );
                             @endphp
                             <tr>
-                                <td><strong>{{ $receipt->reference }}</strong></td>
+                                <td><strong>{{ $receipt->reference }}</strong><div class="small">Due: {{ $receipt->due_date?->format('Y-m-d') ?? 'Due date unknown' }}</div></td>
                                 <td>{{ optional($receipt->received_at)->format('Y-m-d H:i') }}</td>
                                 <td>{{ $receipt->receiver?->name ?: '—' }}</td>
                                 <td>{{ $receipt->supplier_delivery_reference ?: '—' }}</td>

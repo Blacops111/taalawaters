@@ -110,43 +110,43 @@ class PartyStatementService
     }
 
     /** One source row per document. Never infer a party from free-text journal descriptions. */
-    private function sources(bool $customer): Builder
+    protected function sources(bool $customer): Builder
     {
         if ($customer) {
             $sales = DB::table('sales_orders as s')->leftJoin('customers as c', 'c.id', '=', 's.customer_id')
                 ->where('s.sale_type', SalesOrder::TYPE_BUSINESS)
-                ->selectRaw('? as source_type, s.id as source_id, c.id as party_id, s.reference as document_reference, ? as kind, NULL as external_reference', [(new SalesOrder)->getMorphClass(), 'Sale']);
+                ->selectRaw('? as source_type, s.id as source_id, c.id as party_id, s.reference as document_reference, ? as kind, NULL as external_reference, s.id as document_id, s.reference as ageing_reference, s.due_date, c.name as party_name, c.is_active as party_active', [(new SalesOrder)->getMorphClass(), 'Sale']);
             $payments = DB::table('customer_payments as p')->leftJoin('customers as c', 'c.id', '=', 'p.customer_id')
                 ->leftJoin('sales_orders as s', 's.id', '=', 'p.sales_order_id')
-                ->selectRaw('? as source_type, p.id as source_id, CASE WHEN s.customer_id = p.customer_id AND s.sale_type = ? THEN c.id ELSE NULL END as party_id, p.reference as document_reference, ? as kind, p.external_reference', [(new CustomerPayment)->getMorphClass(), SalesOrder::TYPE_BUSINESS, 'Customer payment']);
+                ->selectRaw('? as source_type, p.id as source_id, CASE WHEN s.customer_id = p.customer_id AND s.sale_type = ? THEN c.id ELSE NULL END as party_id, p.reference as document_reference, ? as kind, p.external_reference, s.id as document_id, s.reference as ageing_reference, s.due_date, c.name as party_name, c.is_active as party_active', [(new CustomerPayment)->getMorphClass(), SalesOrder::TYPE_BUSINESS, 'Customer payment']);
             $reversals = DB::table('sales_order_reversals as r')->leftJoin('sales_orders as s', 's.id', '=', 'r.sales_order_id')
                 ->leftJoin('customers as c', 'c.id', '=', 's.customer_id')
-                ->selectRaw('? as source_type, r.id as source_id, CASE WHEN s.sale_type = ? THEN c.id ELSE NULL END as party_id, r.reference as document_reference, ? as kind, NULL as external_reference', [(new SalesOrderReversal)->getMorphClass(), SalesOrder::TYPE_BUSINESS, 'Sale reversal']);
+                ->selectRaw('? as source_type, r.id as source_id, CASE WHEN s.sale_type = ? THEN c.id ELSE NULL END as party_id, r.reference as document_reference, ? as kind, NULL as external_reference, s.id as document_id, s.reference as ageing_reference, s.due_date, c.name as party_name, c.is_active as party_active', [(new SalesOrderReversal)->getMorphClass(), SalesOrder::TYPE_BUSINESS, 'Sale reversal']);
 
             return $sales->unionAll($payments)->unionAll($reversals);
         }
 
         $receipts = DB::table('purchase_receipts as r')->leftJoin('purchase_requests as q', 'q.id', '=', 'r.purchase_request_id')
             ->leftJoin('suppliers as s', 's.id', '=', 'q.supplier_id')
-            ->selectRaw('? as source_type, r.id as source_id, s.id as party_id, r.reference as document_reference, ? as kind, r.supplier_delivery_reference as external_reference', [(new PurchaseReceipt)->getMorphClass(), 'Goods receipt']);
+            ->selectRaw('? as source_type, r.id as source_id, s.id as party_id, r.reference as document_reference, ? as kind, r.supplier_delivery_reference as external_reference, r.id as document_id, r.reference as ageing_reference, r.due_date, s.name as party_name, s.is_active as party_active', [(new PurchaseReceipt)->getMorphClass(), 'Goods receipt']);
         $payments = DB::table('supplier_payments as p')->leftJoin('suppliers as s', 's.id', '=', 'p.supplier_id')
             ->leftJoin('purchase_receipts as r', 'r.id', '=', 'p.purchase_receipt_id')
             ->leftJoin('purchase_requests as q', 'q.id', '=', 'r.purchase_request_id')
-            ->selectRaw('? as source_type, p.id as source_id, CASE WHEN q.supplier_id = p.supplier_id THEN s.id ELSE NULL END as party_id, p.reference as document_reference, ? as kind, p.external_reference', [(new SupplierPayment)->getMorphClass(), 'Supplier payment']);
+            ->selectRaw('? as source_type, p.id as source_id, CASE WHEN q.supplier_id = p.supplier_id THEN s.id ELSE NULL END as party_id, p.reference as document_reference, ? as kind, p.external_reference, r.id as document_id, r.reference as ageing_reference, r.due_date, s.name as party_name, s.is_active as party_active', [(new SupplierPayment)->getMorphClass(), 'Supplier payment']);
 
         return $receipts->unionAll($payments);
     }
 
-    private function metadataQuery(Builder $sources): Builder
+    protected function metadataQuery(Builder $sources): Builder
     {
         return DB::table('journal_entries as e')->leftJoinSub($sources, 'sources', function ($join) {
             $join->on('sources.source_type', '=', 'e.source_type')->on('sources.source_id', '=', 'e.source_id');
         })->select('e.id', 'e.reference', 'e.entry_date', 'e.status', 'e.description', 'e.reversal_of_id',
-            'sources.source_id as mapped_source_id', 'sources.party_id', 'sources.document_reference', 'sources.kind', 'sources.external_reference');
+            'sources.source_id as mapped_source_id', 'sources.party_id', 'sources.document_reference', 'sources.kind', 'sources.external_reference', 'sources.document_id', 'sources.ageing_reference', 'sources.due_date', 'sources.party_name', 'sources.party_active');
     }
 
     /** Reversal parents may be outside the date range or have no control-account lines. */
-    private function loadAncestors(array &$metadata, Builder $sources): void
+    protected function loadAncestors(array &$metadata, Builder $sources): void
     {
         $frontier = array_values($metadata);
         while ($frontier !== []) {
@@ -173,7 +173,7 @@ class PartyStatementService
     }
 
     /** Every known source in a reversal chain must agree; broken/cyclic links stay unassigned. */
-    private function attribute(object $entry, array $metadata): ?array
+    protected function attribute(object $entry, array $metadata, bool $requireDocument = false): ?array
     {
         $seen = [];
         $attribution = null;
@@ -186,9 +186,14 @@ class PartyStatementService
                 if ($entry->party_id === null || ($attribution !== null && $attribution['party_id'] !== (int) $entry->party_id)) {
                     return null;
                 }
+                if ($requireDocument && ($entry->document_id === null || ($attribution !== null && $attribution['document_id'] !== (int) $entry->document_id))) {
+                    return null;
+                }
                 $attribution ??= [
                     'party_id' => (int) $entry->party_id, 'document_reference' => $entry->document_reference,
                     'kind' => $entry->kind, 'external_reference' => $entry->external_reference,
+                    'document_id' => (int) $entry->document_id, 'ageing_reference' => $entry->ageing_reference,
+                    'due_date' => $entry->due_date, 'party_name' => $entry->party_name, 'party_active' => $entry->party_active,
                 ];
             }
             if ($entry->reversal_of_id === null) {

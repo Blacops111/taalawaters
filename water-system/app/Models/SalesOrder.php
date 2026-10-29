@@ -20,6 +20,7 @@ class SalesOrder extends Model
         'customer_id',
         'sale_type',
         'reference',
+        'due_date',
         'status',
         'sale_at',
         'total_amount',
@@ -32,9 +33,19 @@ class SalesOrder extends Model
         return $this->hasMany(CustomerPayment::class);
     }
 
+    protected static function booted(): void
+    {
+        static::updating(function (self $model) {
+            if ($model->getRawOriginal('status') !== self::STATUS_DRAFT && $model->isDirty('due_date')) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['due_date' => 'Posted transaction due dates cannot be changed.']);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
+            'due_date' => 'date',
             'sale_at' => 'datetime',
             'total_amount' => 'decimal:2',
         ];

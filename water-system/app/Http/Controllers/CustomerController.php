@@ -35,6 +35,7 @@ class CustomerController extends Controller
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? null,
             'address' => $validated['address'] ?? null,
+            'payment_terms_days' => $validated['payment_terms_days'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
@@ -62,6 +63,7 @@ class CustomerController extends Controller
             'phone' => $validated['phone'] ?? null,
             'email' => $validated['email'] ?? null,
             'address' => $validated['address'] ?? null,
+            'payment_terms_days' => $validated['payment_terms_days'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
@@ -79,6 +81,7 @@ class CustomerController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:2000'],
+            'payment_terms_days' => ['nullable', 'integer', 'min:0', 'max:3650'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

@@ -5,6 +5,14 @@
 
 <div class="row g-3">
     <div class="col-md-6">
+        <label for="payment_terms_days" class="form-label">Payment terms (calendar days)</label>
+        <input type="number" id="payment_terms_days" name="payment_terms_days" min="0" max="3650" step="1"
+            value="{{ is_scalar(old('payment_terms_days', $supplier->payment_terms_days ?? '')) ? old('payment_terms_days', $supplier->payment_terms_days ?? '') : '' }}"
+            class="form-control @error('payment_terms_days') is-invalid @enderror">
+        @error('payment_terms_days')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <div class="form-text">Blank means unknown; 0 means due on the transaction date. Applies to new transactions only.</div>
+    </div>
+    <div class="col-md-6">
         <label for="name" class="form-label">Supplier Name</label>
         <input
             type="text"

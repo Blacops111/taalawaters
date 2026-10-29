@@ -31,6 +31,7 @@
             @endif
         </div>
     @endif
+    <a class="btn btn-outline-primary mb-3" href="{{ route($isCustomer ? 'accounting.customer-ageing' : 'accounting.supplier-ageing', ['party_id' => $party->id, 'as_of' => $dateTo]) }}">Outstanding balances and ageing</a>
     <p>Statement period: <strong>{{ $dateFrom }} to {{ $dateTo }}</strong>, inclusive journal dates. All amounts are in KES.</p>
     <p class="text-muted">{{ $isCustomer ? 'Positive balances are owed by the customer. Negative balances are customer credits.' : 'Positive balances are owed to the supplier. Negative balances are supplier debit balances.' }}</p>
     <div class="row g-3 mb-4">

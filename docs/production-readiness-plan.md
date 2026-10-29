@@ -16,11 +16,13 @@ Status legend: **Owner-verified** means focused tests, affected regressions and 
 | --- | --- | --- | --- |
 | 1.1 | Historical inventory valuation by date; opening values plus recorded quantity/value movements; reconciliation to posted account 1300 | Inclusive cutoff, reversals on their own dates, inactive items, no invented pre-activation values; report totals reconcile and differences remain visible | Owner-verified — 86 tests / 693 assertions and browser confirmation |
 | 1.2 | Customer and supplier statements | Opening balance + dated activity = closing balance; only authorized records visible | Owner-verified — 94 tests / 722 assertions and browser confirmation |
-| 1.3 | Outstanding balances and ageing | Confirm payment terms/due dates first; ageing agrees with receivables/payables and does not invent overdue dates | Planned |
+| 1.3 | Outstanding balances and ageing with configurable party terms and transaction due-date overrides | Journal-dated settlements/reversals, saved due dates, unknown-date bucket, signed credits and control coverage | Pending verification — author passed 25 focused / 220 assertions + 147 regressions / 1,060 assertions; owner tests/browser check next |
 | 1.4 | Financial report PDF/Excel exports | Export totals/date ranges match screen; authorized access and safe user text | Planned |
 | 1.5 | Review missing payment/receipt correction workflows; implement agreed audited corrections | No destructive editing, duplicate stock effects, duplicate refunds or lost audit history | Planned |
 | 1.6 | Period locks and controlled reopening; review closing-entry treatment | All relevant posting/reversal paths respect locks; reopen permission and audit verified | Planned |
 | 1.7 | Accountant review of opening balances, invoices, taxes and required financial workflows | Business approves opening cash/bank, receivables, payables, inventory and equity; day-one requirements documented | Planned |
+
+Increment 1.3 rules agreed: optional calendar-day terms per customer/supplier (0 means same-day; blank means unknown), snapshotted due dates on new sales drafts and individual goods receipts, optional transaction override, and no backfill of existing dates. Current/due-today, 1–30, 31–60, 61–90, 91+ and unknown-date buckets stay separate from signed credits. Payments/reversals follow posted journal dates and explicit document links. Historical date corrections/backfill require a separately agreed audited workflow.
 
 Do not add automatic overhead rates or other accounting automation unless separately agreed. Existing allocation of recorded production expenses remains supported.
 
@@ -124,4 +126,4 @@ Gather hardware and migration information early while software increments procee
 
 ## Immediate next action
 
-**1.1 Historical inventory valuation** and **1.2 Customer and supplier statements** are complete and owner-verified. Next is **1.3 Outstanding balances and ageing**. Confirm payment terms for business customers and suppliers, whether due dates can vary per transaction, and the handling of existing records without agreed due dates before implementation. Do not invent contractual due dates or label unknown terms overdue. Keep this document and README synchronized as each milestone completes. No delivery dates are promised before hardware, payroll, external-service and business-policy dependencies are known.
+**1.1 Historical inventory valuation** and **1.2 Customer and supplier statements** are complete and owner-verified. **1.3 Outstanding balances and ageing** is implemented under the agreed rules above, with 172 author-run tests / 1,280 assertions passing on PHP 8.3 / SQLite. Apply the nullable-column migration and run the commands/browser checklist in README locally. Await `customer supplier ageing ok` before marking 1.3 owner-verified, then proceed to **1.4 Financial report PDF/Excel exports**. Do not invent contractual due dates or label unknown terms overdue. Keep this document and README synchronized as each milestone completes. No delivery dates are promised before hardware, payroll, external-service and business-policy dependencies are known.

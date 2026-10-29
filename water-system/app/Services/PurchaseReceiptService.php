@@ -21,6 +21,7 @@ class PurchaseReceiptService
         array $quantities,
         ?string $supplierDeliveryReference = null,
         ?string $notes = null,
+        ?string $dueDate = null,
     ): PurchaseReceipt {
         return DB::transaction(function () use (
             $purchaseRequest,
@@ -29,6 +30,7 @@ class PurchaseReceiptService
             $quantities,
             $supplierDeliveryReference,
             $notes,
+            $dueDate,
         ) {
             InventoryCostingService::lock();
             $lockedRequest = PurchaseRequest::query()
@@ -125,6 +127,7 @@ class PurchaseReceiptService
                     : null,
                 'received_by' => $user->id,
                 'received_at' => $receivedAt,
+                'due_date' => app(PaymentTermsService::class)->dueDate($receivedAt, $lockedRequest->supplier->payment_terms_days, $dueDate),
                 'notes' => $cleanNotes !== '' ? $cleanNotes : null,
             ]);
 
